@@ -4,16 +4,47 @@ clear; close all; clc;
 %% --------------------- USER SETTINGS ---------------------
 % WCP GLSAR 091024
 sarData(1).date = '20250910';
-sarData(1).dir = 'E:\WCP\0925campaign\GLSAR\South\20250910T184409';
-sarData(1).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250910T184409';
+sarData(1).dir = 'E:\WCP\0925campaign\GLSAR\South\20250910\20250910T184409';
+sarData(1).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250910\20250910T184409';
 sarData(1).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T184409_TMA_TX2_RX2_V_V_V.slc'};
 sarData(1).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T184409_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+% 
+% sarData(2).date = '20250910';
+% sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250910\20250910T190936';
+% sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250910\20250910T190936';
+% sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T190936_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T190936_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
-sarData(2).date = '20250910';
-sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250910T190936';
-sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250910T190936';
-sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T190936_TMA_TX2_RX2_V_V_V.slc'};
-sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250910T190936_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+% sarData(2).date = '20250912';
+% sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T205604';
+% sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T205604';
+% sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T205604_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T205604_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+% 
+sarData(2).date = '20250912';
+sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_2_120-5m-acrosstrackoffset\20250912T212016';
+sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_2_120-5m-acrosstrackoffset\20250912T212016';
+sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T212016_TMA_TX2_RX2_V_V_V.slc'};
+sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T212016_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+
+% Vertical Baseline 120-110 
+% sarData(1).date = '20250912';
+% sarData(1).dir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T210102';
+% sarData(1).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T210102';
+% sarData(1).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T210102_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(1).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T210102_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+% 
+% sarData(2).date = '20250912';
+% sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T205604';
+% sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\20250912T205604';
+% sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T205604_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T205604_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+
+% sarData(2).date = '20250912';
+% sarData(2).dir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_2_120-5m-acrosstrackoffset\20250912T212016';
+% sarData(2).trajDir = 'E:\WCP\0925campaign\GLSAR\South\20250912\lift_2_120-5m-acrosstrackoffset\20250912T212016';
+% sarData(2).slcFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T212016_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(2).mliFiles = {'WCP_2025_TMA_2ms_200MHz_20250912T212016_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
 
 % MCS CarSAR 031824
@@ -291,8 +322,8 @@ plot(tmpCR.Easting./1000,tmpCR.Northing./1000,'^k','MarkerSize',5,'MarkerFaceCol
 text(tmpCR.Easting./1000+0.01,tmpCR.Northing./1000+0.01, tmpCR.Name, 'FontSize', 12, 'Color', 'm','FontName','Serif','FontWeight','bold');
 daspect([1,1,1])
 set(gca,'Ydir','normal', 'fontname','serif','fontweight','bold','fontsize',14)
-% title('White Clouds Preserve: 09/24 Corner Reflectors')
-title('Mores Creek Summit: 2025 Corner Reflectors')
+title('White Clouds Preserve: 09/25 Corner Reflectors')
+% title('Mores Creek Summit: 2025 Corner Reflectors')
 xlabel('Easting (km)');ylabel('Northing (km)');
 ax = ancestor(hI, 'axes');
 ax.XAxis.Exponent = 0;
@@ -312,7 +343,7 @@ fprintf('SLC processing complete. Elapsed time: %.2f seconds\n', toc);
 fprintf('Interferometric Processing \n');
 tic
 params.filterSize = 9;
-unwrapOpts.method = 'multiseed'; unwrapOpts.qualityThresh = 0.3;
+unwrapOpts.method = 'none'; unwrapOpts.qualityThresh = 0.3;
 unwrapOpts.sigma = 5;
 unwrapOpts.pairingMode = 'bydirs';
 [insarData, unwrapOpts] = insar.process_interferometric_phase(sarData, geomData, CR, params, unwrapOpts);
@@ -324,10 +355,13 @@ fprintf('InSAR processing complete. Elapsed time: %.2f seconds\n', toc);
 db = sarData(1).db{1};
 dbMask = db<-30;
 dbIx = find(dbMask);
-coh = medfilt2(insarData(1).coherence,[11,11]);
+% coh = medfilt2(insarData(1).coherence,[11,11]);
+coh = medfilt2(cor,[11,11]);
+
 cohMask = coh < 0.25;
 cohIx = find(cohMask);
-coh = insarData(1).coherence;
+% coh = insarData(1).coherence;
+coh = cor;
 % Power
 figure();
 subplot(1,2,1)
@@ -355,7 +389,9 @@ ax.YAxis.Exponent = 0;
 ytickformat('%.1f')
 
 % Interferogram
-phz = insarData(1).phzReferenced;
+% phz = insarData(1).phzReferenced;
+% phz = insarData(1).phzWrapped;
+phz = phz_corr;
 % phz = angle(insarData(1).complexCoherence);
 phz(dbIx) = NaN;
 phz(cohIx) = NaN;
@@ -388,7 +424,7 @@ ytickformat('%.1f')
 set(gcf,'Position',[416.200000000000	185.800000000000	1099.20000000000	420.000000000000])
 % exportgraphics(gcf,[sarData(1).dir,'\figures\WCP091324GLSARHHHV.png'],Resolution=300)
 % exportgraphics(gcf,[sarData(2).dir,'\figures\MCS022025GLSARbistatic.png'],Resolution=300)
-exportgraphics(gcf,[sarData(1).dir,'\figures\WCP001025south120-120-rampRemoved.png'],Resolution=300)
+% exportgraphics(gcf,[sarData(1).dir,'\figures\WCP001025south120-120-rampRemoved.png'],Resolution=300)
 
 % Coherence
 figure();
@@ -416,6 +452,37 @@ ax.YAxis.Exponent = 0;
 ytickformat('%.1f')
 % exportgraphics(gcf,[sarData(1).dir,'\figures\WCP001025south120-120-coherence.png'],Resolution=300)
 
+% Signal Penetration
+if insarData.penetrationValid
+    penetration = insarData.penetration;
+    penetration(coh<0.3) = NaN;
+    penetration(penetration > 0) = NaN;
+    % penetration = -exp(penetration);
+    figure();
+    imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
+    utils.freezeColors; hold on;
+    hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,penetration,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+    ylabel(hc,'Signal Penetration (m)','fontname','serif','fontweight','bold','fontsize',14)
+    % xlabel('Longitude');ylabel('Latitude');
+    xlabel('Easting (km)');ylabel('Northing (km)');
+    % clim([quantile(coh(:),[0.1,0.975])])
+    clim([-1 0])
+    % clim([-30 10])
+    set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
+    title('White Clouds Preserve: 09/12/25')
+
+    % title('White Clouds Preserve: 09/13/24')
+    % title('a)   Mores Creek Summit: 02/20/25')
+    % title('a)   Mores Creek Summit: 03/19/24')
+
+
+    ax = ancestor(hI, 'axes');
+    ax.XAxis.Exponent = 0;
+    xtickformat('%.1f')
+    ax.YAxis.Exponent = 0;
+    ytickformat('%.1f')
+    exportgraphics(gcf,['E:\WCP\0925campaign\GLSAR\South\20250912\lift_1_120_110\figures\WCP091225south120-110-penetration.png'],Resolution=300)
+end
 
 % 
 % figure();

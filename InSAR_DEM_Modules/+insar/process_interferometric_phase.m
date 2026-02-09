@@ -7,7 +7,7 @@ function [insarData, unwrapOpts] = process_interferometric_phase(sarData, geomDa
 %       - Fallback for tiny regions
 
 if nargin < 5, unwrapOpts = struct(); end
-if ~isfield(unwrapOpts, 'method'), unwrapOpts.method = 'multiseed'; end
+if ~isfield(unwrapOpts, 'method'), unwrapOpts.method = 'none'; end
 if ~isfield(unwrapOpts, 'referenceMethod'), unwrapOpts.referenceMethod = 'crWeightedMean'; end
 if ~isfield(unwrapOpts, 'useRobustWeighting'), unwrapOpts.useRobustWeighting = false; end
 if ~isfield(unwrapOpts, 'filterSize'), unwrapOpts.filterSize = 5; end
@@ -212,6 +212,8 @@ for p = 1:numel(pairs)
 
         case 'goldstein'
             phzUnwrapped = insar.unwrap_goldstein(phzWrapped);
+        case 'none'
+            phzUnwrapped = phzWrapped;
         otherwise
             error('Unknown unwrap method: %s', unwrapOpts.method);
     end
