@@ -201,16 +201,16 @@ function crBeta = extract_cr_beta(CR)
 %  - numeric vector (assumed already beta/flatInc degrees)
 if istable(CR)
     vnames = CR.Properties.VariableNames;
-    idx = find(strcmpi(vnames, 'incidence'), 1);
+    idx = find(strcmpi(vnames, 'losElevationAngle'), 1);
     if isempty(idx)
-        error("CR table must contain a column named 'incidence' (case-insensitive).");
+        error("CR table must contain a column named 'losElevationAngle' (case-insensitive).");
     end
     crBeta = CR.(vnames{idx});
 elseif isstruct(CR)
     f = fieldnames(CR);
-    idx = find(strcmpi(f, 'incidence'), 1);
+    idx = find(strcmpi(f, 'losElevationAngle'), 1);
     if isempty(idx)
-        error("CR struct must contain a field named 'incidence' (case-insensitive).");
+        error("CR struct must contain a field named 'losElevationAngle' (case-insensitive).");
     end
     crBeta = CR.(f{idx});
 elseif isnumeric(CR)

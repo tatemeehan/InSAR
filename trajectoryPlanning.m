@@ -241,7 +241,7 @@ tic;
 toc;
 L_az = 3.5;
 % B_crit = compute_critical_baseline(lambda, slantRange, L_az);
-Bcrit10 = compute_critical_baseline(lambda, slantRange10, incidence10, 1);
+Bcrit10 = insar.compute_critical_baseline(lambda, slantRange10, incidence10, 1);
 %%
 tic;
 % [baseline, slantRange, incidence, lookmask] = insar.InSARgeometry(Xi, Yi, dem, r1, r2, surfaceNormal);
@@ -251,7 +251,7 @@ tic;
 toc;
 L_az = 3.5;
 % B_crit = compute_critical_baseline(lambda, slantRange, L_az);
-Bcrit15 = compute_critical_baseline(lambda, slantRange15, incidence15, 1);
+Bcrit15 = insar.compute_critical_baseline(lambda, slantRange15, incidence15, 1);
 %% 12.5 m baseline
 tic;
 % [baseline, slantRange, incidence, lookmask] = insar.InSARgeometry(Xi, Yi, dem, r1, r2, surfaceNormal);
@@ -261,7 +261,7 @@ tic;
 toc;
 L_az = 3.5;
 % B_crit = compute_critical_baseline(lambda, slantRange, L_az);
-Bcrit12 = compute_critical_baseline(lambda, slantRange12, incidence12, 1);
+Bcrit12 = insar.compute_critical_baseline(lambda, slantRange12, incidence12, 1);
 
 %% 20 m vertical baseline (WCP2024)
 tic;
@@ -272,4 +272,4 @@ tic;
 toc;
 L_az = 3.5;
 % Bcrit20 = compute_critical_baseline(lambda, slantRange, L_az);
-Bcrit20 = compute_critical_baseline(lambda, slantRange20, incidence20, 1);
+Bcrit20 = insar.compute_critical_baseline(lambda, slantRange20, incidence20, 1);
