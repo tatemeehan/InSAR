@@ -1,48 +1,40 @@
 function [amp, pow, db, meta] = compute_sli(slc, P, a, lambda, pixelArea, incidence, slope, slantRange, correction)
 %COMPUTE_SLI Compute Single Look Geocoded Image with optional RCS, terrain, and range correction.
-%
-%   [amp, pow, db, meta] = compute_sli(slc, P, a, lambda, pixelArea, incidence, slope, correction, slantRange)
-%
-%   Inputs:
-%       slc         - complex Single Look Complex image (matrix)
-%       P           - Returned power from reference target (linear power)
-%       a           - Side length of trihedral CR (m), default = 1
-%       lambda      - Radar wavelength (m), default = 0.3/1.3 (L-band)
-%       pixelArea   - (optional) pixel area raster (m^2), for area normalization
-%       incidence   - (optional) incidence angle raster (degrees)
-%       slope       - (optional) terrain slope raster (degrees)
-%       slantRange  - (optional) slant range raster (m) for range correction (R^2)
-%       correction  - (optional) string or cell array: {'gamma0','beta0','pixelarea','rangecorrect'}
-%
-%   Outputs:
-%       amp   - Backscatter amplitude image
-%       pow   - Calibrated backscatter intensity (linear)
-%       db    - Backscatter intensity (dB scale)
-%       meta  - Struct containing applied corrections and scale factors
 
 % Defaults
 if nargin < 3 || isempty(a),       a = 1; end
-if nargin < 4 || isempty(lambda), lambda = 0.3/1.3; end
+if nargin < 4 || isempty(lambda),  lambda = 0.3/1.3; end
 if nargin < 5, pixelArea = []; end
 if nargin < 6, incidence = []; end
 if nargin < 7, slope = []; end
-if nargin < 8 || isempty(correction), correction = {}; end
+if nargin < 8, slantRange = []; end
+if nargin < 9 || isempty(correction), correction = {}; end
 if ischar(correction), correction = {correction}; end
-if nargin < 9, slantRange = []; end
+
+% Work in single for raster products
+if ~isa(slc, 'single')
+    slc = single(slc);
+end
+if ~isempty(pixelArea) && ~isa(pixelArea, 'single'),   pixelArea = single(pixelArea); end
+if ~isempty(incidence) && ~isa(incidence, 'single'),   incidence = single(incidence); end
+if ~isempty(slope) && ~isa(slope, 'single'),           slope = single(slope); end
+if ~isempty(slantRange) && ~isa(slantRange, 'single'), slantRange = single(slantRange); end
 
 % Compute raw amplitude and power
-amp = abs(slc);
-pow = amp.^2;
+amp = abs(slc);       % single
+pow = amp .* amp;     % single
 
 meta = struct();
 meta.corrections = correction;
 
-% ----- RCS Calibration (if P is given) -----
+% ----- RCS Calibration -----
 if ~isempty(P)
-    RCS = (4 * pi * a^4) / (3 * lambda^2); % Trihedral RCS
-    scale = RCS / P;
-    pow = pow * scale;
-    meta.rcsScale = scale;
+    % Scalars can stay double; cast final scale for raster math
+    RCS = (4 * pi * a^4) / (3 * lambda^2);
+    scale = single(RCS / P);
+    pow = pow .* scale;
+
+    meta.rcsScale = double(scale);
     meta.rcs = RCS;
 else
     meta.rcsScale = 1;
@@ -81,7 +73,7 @@ for i = 1:length(correction)
                 warning('Slant range raster not provided. Skipping range correction.');
                 meta.rangeCorrection = false;
             else
-                pow = pow .* (slantRange.^2);  % Standard R^2 correction
+                pow = pow .* (slantRange .* slantRange);
                 meta.rangeCorrection = 'R^2';
             end
 
@@ -90,7 +82,8 @@ for i = 1:length(correction)
                 warning('Slant range raster not provided. Skipping R^4 correction.');
                 meta.rangeCorrection = false;
             else
-                pow = pow .* (slantRange.^4);  % Full R^4 correction
+                sr2 = slantRange .* slantRange;
+                pow = pow .* (sr2 .* sr2);
                 meta.rangeCorrection = 'R^4';
             end
 
@@ -99,11 +92,13 @@ for i = 1:length(correction)
     end
 end
 
-% Convert to dB
-% db = 10 * log10(max(pow, eps));
-% db = 10 * log10(pow);
-% db(~isfinite(pow)) = NaN;
-db = nan(size(pow));
-valid = pow > 0 & isfinite(pow);
-db(valid) = 10 * log10(pow(valid));
+% Convert to dB as single
+db = nan(size(pow), 'single');
+valid = (pow > 0) & isfinite(pow);
+db(valid) = single(10) .* log10(pow(valid));
+
+% Optional: ensure outputs are single even after any promotion
+amp = single(amp);
+pow = single(pow);
+db  = single(db);
 end

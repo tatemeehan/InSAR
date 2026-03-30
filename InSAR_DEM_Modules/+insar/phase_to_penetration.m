@@ -1,30 +1,61 @@
-
 function penetration = phase_to_penetration(phase_unwrapped, lambda, Bperp, r_slant, incidence)
 %PHASE_TO_PENETRATION Apparent vertical phase-center offset (m) from InSAR phase
 %
-%   penetration is an apparent vertical bias of the effective phase center
-%   relative to the DEM reference surface (sign depends on your convention).
+% penetration is the apparent vertical offset of the effective phase center
+% relative to the DEM reference surface, under the standard InSAR height model.
+% Sign depends on the phase and Bperp sign conventions used upstream.
 
     if ~isequal(size(phase_unwrapped), size(Bperp), size(r_slant), size(incidence))
         error('All input arrays must be the same size.');
     end
 
-    % degrees -> radians (your check is fine)
-    if any(incidence(:) > pi)
+    % Degrees -> radians if needed
+    if any(incidence(:) > pi, 'all')
         incidence = deg2rad(incidence);
     end
 
     sin_theta = sin(incidence);
 
-    % Optional masks to avoid blow-ups
-    Bmin = 0.1;      % m, tune for your platform
-    stmin = 0.05;    % avoid near-grazing issues
-    mask = isfinite(phase_unwrapped) & isfinite(Bperp) & isfinite(r_slant) & isfinite(sin_theta) ...
-         & abs(Bperp) > Bmin & sin_theta > stmin;
+    % Guards against unstable geometry
+    Bmin  = 0.1;   % m, minimum |Bperp| allowed
+    stmin = 0.05;  % minimum |sin(theta)| allowed
+
+    mask = isfinite(phase_unwrapped) & isfinite(Bperp) & ...
+           isfinite(r_slant) & isfinite(sin_theta) & ...
+           (abs(Bperp) > Bmin) & (abs(sin_theta) > stmin);
 
     penetration = nan(size(phase_unwrapped));
-    penetration(mask) = (lambda .* r_slant(mask) .* sin_theta(mask)) ./ (4*pi .* Bperp(mask)) .* phase_unwrapped(mask);
+
+    penetration(mask) = ...
+        (lambda .* r_slant(mask) .* sin_theta(mask)) ./ ...
+        (4*pi .* Bperp(mask)) .* phase_unwrapped(mask);
 end
+% function penetration = phase_to_penetration(phase_unwrapped, lambda, Bperp, r_slant, incidence)
+% %PHASE_TO_PENETRATION Apparent vertical phase-center offset (m) from InSAR phase
+% %
+% %   penetration is an apparent vertical bias of the effective phase center
+% %   relative to the DEM reference surface (sign depends on your convention).
+% 
+%     if ~isequal(size(phase_unwrapped), size(Bperp), size(r_slant), size(incidence))
+%         error('All input arrays must be the same size.');
+%     end
+% 
+%     % degrees -> radians (your check is fine)
+%     if any(incidence(:) > pi)
+%         incidence = deg2rad(incidence);
+%     end
+% 
+%     sin_theta = sin(incidence);
+% 
+%     % Optional masks to avoid blow-ups
+%     Bmin = 0.1;      % m, tune for your platform
+%     stmin = 0.05;    % avoid near-grazing issues
+%     mask = isfinite(phase_unwrapped) & isfinite(Bperp) & isfinite(r_slant) & isfinite(sin_theta) ...
+%          & abs(Bperp) > Bmin & sin_theta > stmin;
+% 
+%     penetration = nan(size(phase_unwrapped));
+%     penetration(mask) = (lambda .* r_slant(mask) .* sin_theta(mask)) ./ (4*pi .* Bperp(mask)) .* phase_unwrapped(mask);
+% end
 % function penetration = phase_to_penetration(phase_unwrapped, lambda, Bperp, r_slant, incidence)
 % %PHASE_TO_PENETRATION Estimate penetration depth or surface bias from InSAR phase
 % %

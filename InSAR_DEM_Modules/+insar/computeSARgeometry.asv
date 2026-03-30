@@ -1,5 +1,5 @@
 function geomData = computeSARgeometry(sarData, demData, opts)
-% Flexible geometry builder with 4 modes: 'all' | 'selected' | 'trajtol' | 'saronly'
+% Flexible geometry builder with 3 modes: 'all' | 'selected' | 'trajtol'
 % Outputs:
 %   geomData.sarGeometry   : cell of unique geoms (Bperp, slant, inc, mask, ...)
 %   geomData.pairResults   : struct per requested oriented pair with .geomIndex
@@ -126,89 +126,11 @@ for p = 1:size(reqPairs,1)
     slcGeomIndex(ii2,jj2).idx  = geomIdx; slcGeomIndex(ii2,jj2).pass = 'slave';
 
     % full list per node (for diagnostics or alt lookups)
-    if isempty(node2geom{ii1,jj1})
-        node2geom{ii1,jj1} = struct('idx',geomIdx,'role','master','mate',[ii2 jj2]);
-    else
-        node2geom{ii1,jj1}(end+1) = struct('idx',geomIdx,'role','master','mate',[ii2 jj2]);
-    end
-
-    if isempty(node2geom{ii2,jj2})
-        node2geom{ii2,jj2} = struct('idx',geomIdx,'role','slave','mate',[ii1 jj1]);
-    else
-        node2geom{ii2,jj2}(end+1) = struct('idx',geomIdx,'role','slave','mate',[ii1 jj1]);
-    end
+    node2geom{ii1,jj1}(end+1) = struct('idx',geomIdx,'role','master','mate',[ii2 jj2]);
+    node2geom{ii2,jj2}(end+1) = struct('idx',geomIdx,'role','slave', 'mate',[ii1 jj1]);
 
     % record
     pairResults(end+1) = struct('ii1',ii1,'jj1',jj1,'ii2',ii2,'jj2',jj2,'geomIndex',geomIdx);
-end
-
-% ---- ensure every SLC has at least one geometry
-% This is the key block for SAR-only and orphan-SLC handling.
-
-for ii = 1:numel(sarData)
-    for jj = 1:numel(sarData(ii).slc)
-
-        % If this SLC already has a geometry from the pair loop, skip it
-        if ~isnan(slcGeomIndex(ii,jj).idx)
-            continue
-        end
-
-        r = sarData(ii).traj{jj};
-        undirectedKey = undirectedPairKey(ii,jj,ii,jj);
-
-        if isKey(geomKeyMap, undirectedKey)
-            geomIdx = geomKeyMap(undirectedKey);
-        else
-            % Optional re-use check against existing stored geometries
-            matchIdx = [];
-            for k = 1:numel(geomStore)
-                if utils.isSameGeometry(r, r, geomStore{k}.r1, geomStore{k}.r2, opts.geomMatchTol)
-                    matchIdx = k;
-                    break
-                end
-            end
-
-            if isempty(matchIdx)
-                [Bperp, rslant, inc, mask, r2slant, r2inc] = insar.InSARgeometry2( ...
-                    Xi, Yi, DEM, r, r, normalVec, opts.look);
-
-                geomIdx = numel(geomStore) + 1;
-                geomStore{geomIdx} = struct( ...
-                    'Bperp', single(Bperp), ...
-                    'slant', single(rslant), ...
-                    'incidence', single(inc), ...
-                    'lookMask', logical(mask), ...
-                    'slant2', single(r2slant), ...
-                    'incidence2', single(r2inc), ...
-                    'r1', r, 'r2', r, ...
-                    'pair', [ii jj ii jj]);
-            else
-                geomIdx = matchIdx;
-            end
-
-            geomKeyMap(undirectedKey) = geomIdx;
-        end
-
-        % register self-pair lookup
-        kSelf = sprintf('%d_%d_%d_%d', ii,jj,ii,jj);
-        pair2geom(kSelf) = int32(geomIdx);
-
-        % record on node
-        slcGeomIndex(ii,jj).idx  = geomIdx;
-        slcGeomIndex(ii,jj).pass = 'self';
-
-        if isempty(node2geom{ii,jj})
-            node2geom{ii,jj} = struct('idx',geomIdx,'role','self','mate',[ii jj]);
-        else
-            node2geom{ii,jj}(end+1) = struct('idx',geomIdx,'role','self','mate',[ii jj]);
-        end
-
-        % record pair result and pair list
-        pairResults(end+1) = struct( ...
-            'ii1',ii,'jj1',jj,'ii2',ii,'jj2',jj,'geomIndex',geomIdx);
-
-        reqPairs(end+1,:) = [ii jj ii jj];
-    end
 end
 
 % ---- pack

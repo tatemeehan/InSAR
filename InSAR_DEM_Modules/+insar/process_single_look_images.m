@@ -35,6 +35,9 @@ for ii = 1:numDirs
         elseif strcmpi(slcGeom.pass, 'slave')
             slantRange = geom.slant2;
             incidence = geom.incidence2;
+        elseif strcmpi(slcGeom.pass, 'self')
+            slantRange = geom.slant;
+            incidence = geom.incidence;
         else
             error('Unknown pass type: %s', slcGeom.pass);
         end
@@ -58,15 +61,15 @@ for ii = 1:numDirs
             a = median(a_vals(~isnan(a_vals)), 'omitnan');
         else
             P = [];
-            a = 1;
+            a = [];
         end
 
         % Compute SLI
         [amp, pow, db] = insar.compute_sli(slc, P, a, lambda, pixelArea, incidence, slope, slantRange, correction);
 
         % Multi-look Median filtering
-        pow = insar.nanmedfilt2(pow, [filterSize, filterSize]);
-        db  = insar.nanmedfilt2(db, [filterSize, filterSize]);
+        pow = single(insar.nanmedfilt2(pow, [filterSize, filterSize]));
+        db  = single(insar.nanmedfilt2(db, [filterSize, filterSize]));
 
         sarData(ii).amp{jj} = amp;
         sarData(ii).pow{jj} = pow;

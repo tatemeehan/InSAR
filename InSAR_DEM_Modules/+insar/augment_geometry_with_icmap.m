@@ -66,8 +66,8 @@ for uu = usedIdx(:)'
     icM = utils.closestIndexMap(Pm, X, Y, Z, mask, struct('downsample',opts.downsample));
     icS = utils.closestIndexMap(Ps, X, Y, Z, mask, struct('downsample',opts.downsample));
 
-    geomData.sarGeometry{uu}.closestIndex_master = icM;
-    geomData.sarGeometry{uu}.closestIndex_slave  = icS;
+    geomData.sarGeometry{uu}.closestIndex_master = uint16(icM);
+    geomData.sarGeometry{uu}.closestIndex_slave  = uint16(icS);
 end
 end
 function [ii, jj] = find_index_pair(indexStruct, logicMask)

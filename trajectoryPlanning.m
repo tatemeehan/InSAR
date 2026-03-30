@@ -1,4 +1,4 @@
-% Create Synthetic Trajectory
+s% Create Synthetic Trajectory
 % WCP Entire Length
 % testTraj = [715282, 4901860, 1665; 714100,4903660, 1675];
 % WCP North Transect 2024 100 m AGL
@@ -48,9 +48,16 @@ r2 = utils.interparc(trajAxis,testTraj2(:,1),testTraj2(:,2),testTraj2(:,3),'pchi
 % demData.demFn = '240911_White_Cloud_Preserve_1m_DTM.tif';
 % demData.vegFn  = 'WCPvegetationHeight.tif';
 
-demData.dir = 'E:\MCS\MCS032024\lidar\tif';
-demData.demFn = '20240320_MCS_REFDEM_WGS84_CarSAR_UAS_50cm.tif';
-demData.vegFn  = '20240320_MCS_canopyHeight_CarSAR_UAS_50cm.tif';
+% demData.dir = 'E:\MCS\MCS032024\lidar\tif';
+% demData.demFn = '20240320_MCS_REFDEM_WGS84_CarSAR_UAS_50cm.tif';
+% demData.vegFn  = '20240320_MCS_canopyHeight_CarSAR_UAS_50cm.tif';
+
+demData.dir = 'E:\MCS\MCS_CR_SM_25';
+demData.demFn = '2026_MCS_Trim.tif';
+
+% demData.dir = 'E:\CAMAS';
+% demData.demFn = '2026_Camas_South.tif';
+% demData.vegFn  = '20240320_MCS_canopyHeight_CarSAR_UAS_50cm.tif';
 
 % Processing Parameters
 params.c          = 0.3;      % Wave speed sonstant (m/ns)
@@ -61,8 +68,9 @@ params.lambda     = params.c / params.f;    % Radar wavelength (m)
 
 [demData.dem, demData.R, ~, ~, demData.lon, demData.lat,demData.X, demData.Y, demData.EPSG] =...
     io.readLidarTif(fullfile(demData.dir, demData.demFn));
-[demData.veg, ~, ~, ~, ~, ~,~, ~, ~] =...
-    io.readLidarTif(fullfile(demData.dir, demData.vegFn));
+demData.dem(demData.dem < 0) = NaN;
+% [demData.veg, ~, ~, ~, ~, ~,~, ~, ~] =...
+%     io.readLidarTif(fullfile(demData.dir, demData.vegFn));
 
 % Compute Surface Normals
 % Surface Normals
@@ -70,6 +78,12 @@ params.lambda     = params.c / params.f;    % Radar wavelength (m)
     utils.compute_surface_normals(demData.dem, demData.lat, demData.lon, demData.EPSG);
 % For Corner Reflector Incidence assume flat Earth n_hat = [0,0,1];
 demData.surfaceNormal = repmat([0,0,1],length(demData.surfaceNormal),1);
+
+% Load in RTK point
+RTKpoint = readtable('E:\MCS\MCS_CR_SM_25\MCS-GCS-2026.csv');
+[RTKx,RTKy] = utils.deg2utm(RTKpoint.Latitude,RTKpoint.Longitude);
+[RTKix,RTKdist] = dsearchn([demData.X(:),demData.Y(:)],[RTKx,RTKy]);
+RTKz = demData.dem(RTKix);
 %% Compute Synthetic InSAR Geometry
 dem = demData.dem; Xi = demData.X(:);Yi = demData.Y(:); surfaceNormal = demData.surfaceNormal;
 lambda = params.lambda;
@@ -88,7 +102,7 @@ toc;
 % Corner Reflectors
 % MCS
 crDir = 'E:\MCS\MCS_CR_SM_25';
-crFn = 'MCS_CRs_2025.csv';
+crFn = 'MCS_CRs_2026_corrected.csv';
 crPath = fullfile(crDir,crFn);
 crName = {'CR1','CR2'};
 

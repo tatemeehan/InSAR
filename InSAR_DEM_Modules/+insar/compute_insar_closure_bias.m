@@ -2,7 +2,7 @@ function insarClosureData = compute_insar_closure_bias(insarData, opts)
 % Closure via complex products: angle(C_uv * C_vw * C_wu)
 % Orientation is handled by conjugating reverse edges.
 %
-% opts.fieldComplex  : name of complex field (default 'complexCoherence')
+% opts.fieldComplex  : name of complex field (default 'complexPhase')
 % opts.requireFiniteAll (default true)
 % opts.sameBurstOnly : if true, require u,v,w all have the same burst (default false)
 % opts.sortBurstsStrict (default false)
@@ -51,8 +51,9 @@ for k = 1:N
     u = add_node(i,b1); v = add_node(j,b2);
 
     % Pick a complex field, or synthesize from wrapped phase
-    if isfield(insarData(k),'complexPhase') && ~isempty(insarData(k).complexPhase)
-        C = insarData(k).complexCoherence;
+   fieldC = opts.fieldComplex;
+   if isfield(insarData(k), fieldC) && ~isempty(insarData(k).(fieldC))
+       C = insarData(k).(fieldC);
     elseif isfield(insarData(k),'phzWrapped') && ~isempty(insarData(k).phzWrapped)
         C = exp(1i * insarData(k).phzWrapped);
     else
@@ -90,15 +91,15 @@ for t = 1:size(tri,1)
     u = tri(t,1); v = tri(t,2); w = tri(t,3);
     Cuv = edgeC(ek(u,v)); Cvw = edgeC(ek(v,w)); Cwu = edgeC(ek(w,u));
     if ~isequal(size(Cuv),size(Cvw),size(Cwu)), continue; end
-    closureMap = angle(Cuv .* Cvw .* Cwu);   % (-pi,pi]
+    closureMap = single(angle(Cuv .* Cvw .* Cwu));   % (-pi,pi]
 
     finite = isfinite(closureMap);
     tcount = tcount+1;
-    out(tcount).triplet       = [rev{u}(1) rev{v}(1) rev{w}(1)];
-    out(tcount).burst         = [rev{u}(2) rev{v}(2) rev{w}(2)];
-    out(tcount).meanBias      = mean(closureMap(finite),'omitnan');
-    out(tcount).stdBias       = std(closureMap(finite),'omitnan');
-    out(tcount).validFraction = sum(finite(:))/numel(finite);
+    out(tcount).triplet       = uint16([rev{u}(1) rev{v}(1) rev{w}(1)]);
+    out(tcount).burst         = uint16([rev{u}(2) rev{v}(2) rev{w}(2)]);
+    out(tcount).meanBias      = single(mean(closureMap(finite),'omitnan'));
+    out(tcount).stdBias       = single(std(closureMap(finite),'omitnan'));
+    out(tcount).validFraction = single(sum(finite(:))/numel(finite));
     out(tcount).closureMap    = closureMap;
 end
 insarClosureData = out;

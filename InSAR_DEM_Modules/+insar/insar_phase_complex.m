@@ -21,6 +21,8 @@ num   = imfilter(U,            G, 'symmetric');      % complex
 den   = imfilter(double(M),    G, 'symmetric') + eps; % real support count
 Cphase = num ./ den;                                  % complex phase-only
 phi_phaseonly = angle(Cphase);
-
-meta.kernel = G; meta.support = den; meta.mask = M;
+% Effective Looks
+L_eff = 1 / sum(G(:).^2);
+% Meta Out
+meta.kernel = G; meta.support = den; meta.mask = M; meta.nLooksEffective = L_eff;
 end

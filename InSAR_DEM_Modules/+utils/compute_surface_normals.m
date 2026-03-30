@@ -1,17 +1,30 @@
-function [surfaceNormal,aspect,slope] = compute_surface_normals(dem, lat, lon, EPSG)
+function [surfaceNormal, aspect, slope] = compute_surface_normals(dem, lat, lon, EPSG)
 %COMPUTE_SURFACE_NORMALS Compute terrain normal vectors from DEM
 %
-%   surfaceNormal = compute_surface_normals(dem, lat, lon, EPSG)
+%   [surfaceNormal, aspect, slope] = compute_surface_normals(dem, lat, lon, EPSG)
 
-    latlim = [min(lat(:)), max(lat(:))];
-    lonlim = [min(lon(:)), max(lon(:))];
-    sizeDEM = size(dem);
+    % Work in double for numerical stability during gradient computation
+    demD = double(dem);
+    latD = double(lat);
+    lonD = double(lon);
+
+    latlim = [min(latD(:)), max(latD(:))];
+    lonlim = [min(lonD(:)), max(lonD(:))];
+    sizeDEM = size(demD);
 
     gref = georefpostings(latlim, lonlim, sizeDEM, ...
-        'RowsStartFrom','west', 'ColumnsStartFrom','north');
+        'RowsStartFrom', 'west', ...
+        'ColumnsStartFrom', 'north');
+
     gref.GeographicCRS = projcrs(EPSG).GeographicCRS;
 
-    [aspect,slope,gy,gx] = gradientm(dem, gref);
-    normZ = ones(size(gx));
-    surfaceNormal = normalize([-gx(:), -gy(:), normZ(:)], 2, 'norm');
+    [aspectD, slopeD, gy, gx] = gradientm(demD, gref);
+
+    normZ = ones(size(gx), 'double');
+    surfaceNormalD = normalize([-gx(:), -gy(:), normZ(:)], 2, 'norm');
+
+    % Store compactly
+    surfaceNormal = single(surfaceNormalD);
+    aspect = single(aspectD);
+    slope = single(slopeD);
 end

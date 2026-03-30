@@ -40,10 +40,10 @@ surfaceNormal = surfaceNormal(validIx, :);
 N = numel(Xi); T = size(r1,1); Nout = m * n;
 
 % Preallocate
-Bperp_vals = zeros(N,T); rslant_vals = zeros(N,T);
-inc_vals = zeros(N,T); r2slant_vals = zeros(N,T);
-r2inc_vals = zeros(N,T); weights = zeros(N,T);
-azAngle_vals = zeros(N,T); beamMask_vals = false(N,T);
+Bperp_vals = zeros(N,T,'single'); rslant_vals = zeros(N,T,'single');
+inc_vals = zeros(N,T,'single'); r2slant_vals = zeros(N,T,'single');
+r2inc_vals = zeros(N,T,'single'); weights = zeros(N,T,'single');
+azAngle_vals = zeros(N,T,'single'); beamMask_vals = false(N,T);
 
 % Heading and look vector
 heading = diff(r1(:,1:2),1,1); heading(end+1,:) = heading(end,:);
@@ -69,13 +69,13 @@ for t = 1:T
     B_proj = B_dot_lhat .* lhat1;
     B_perp = B - B_proj;
 
-    Bperp_vals(:,t) = vecnorm(B_perp, 2, 2);
-    rslant_vals(:,t) = losNorm1;
-    r2slant_vals(:,t) = losNorm2;
+    Bperp_vals(:,t) = single(vecnorm(B_perp, 2, 2));
+    rslant_vals(:,t) = single(losNorm1);
+    r2slant_vals(:,t) = single(losNorm2);
 
     % Incidence angles
-    inc_vals(:,t) = acosd(min(max(sum(lhat1 .* surfaceNormal,2), -1), 1));
-    r2inc_vals(:,t) = acosd(min(max(sum(lhat2 .* surfaceNormal,2), -1), 1));
+    inc_vals(:,t) = single(acosd(min(max(sum(lhat1 .* surfaceNormal,2), -1), 1)));
+    r2inc_vals(:,t) = single(acosd(min(max(sum(lhat2 .* surfaceNormal,2), -1), 1)));
 
     % Beam angle computation
     losXY = losVec1(:,1:2); losXY_norm = vecnorm(losXY,2,2);
@@ -84,7 +84,7 @@ for t = 1:T
     azAngle = acosd(cosTheta);
     beamMask = azAngle <= beamAngleDeg;
 
-    azAngle_vals(:,t) = azAngle;
+    azAngle_vals(:,t) = single(azAngle);
     beamMask_vals(:,t) = beamMask;
 
     % Weighting
@@ -94,7 +94,7 @@ for t = 1:T
         w = exp(-(losNorm1.^2) / (2 * sigma_range^2));
     end
     w(~beamMask) = 0;
-    weights(:,t) = w;
+    weights(:,t) = single(w);
 end
 
 % Beam hit thresholding (optional)
@@ -127,9 +127,9 @@ lookmask_inc = isfinite(meanInc) & (meanInc >= incLo) & (meanInc <= incHi);
 lookmask_interp = lookmask_interp & lookmask_inc;
 
 % Fill output grids
-Bperp_out = nan(Nout,1); r_slant_out = nan(Nout,1);
-incident_out = nan(Nout,1); r2_slant_out = nan(Nout,1);
-r2_incident_out = nan(Nout,1); lookmask_out = false(Nout,1);
+Bperp_out = nan(Nout,1,'single'); r_slant_out = nan(Nout,1,'single');
+incident_out = nan(Nout,1,'single'); r2_slant_out = nan(Nout,1,'single');
+r2_incident_out = nan(Nout,1,'single'); lookmask_out = false(Nout,1);
 
 % Mask interpolated results with lookmask
 Bperp_interp(~lookmask_interp)    = NaN;

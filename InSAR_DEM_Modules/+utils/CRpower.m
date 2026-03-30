@@ -1,6 +1,9 @@
 function crResult = CRpower(crFile, crList, demData, sarData, geomData, lambda, k, weightType, sigma)
 %CRPOWER Computes slant-range-corrected CR power across SLCs using amplitude+distance weighting.
 %
+% Returns:
+%   crResult = struct([]) when no corner reflector file/list is provided.
+%
 % crResult(c) fields:
 %   .Name
 %   .Easting, .Northing, .Elevation      % refined (combined across all SLCs)
@@ -13,6 +16,18 @@ function crResult = CRpower(crFile, crList, demData, sarData, geomData, lambda, 
 if nargin < 6 || isempty(k), k = 5; end
 if nargin < 7 || isempty(weightType), weightType = 'gaussian'; end
 if nargin < 8 || isempty(sigma), sigma = 1; end
+
+% ---- normalize "no CR" cases
+noCRFile = isempty(crFile) || (isstring(crFile) && strlength(crFile)==0) || ...
+           (ischar(crFile) && isempty(strtrim(crFile)));
+
+noCRList = isempty(crList) || ...
+           (iscell(crList) && all(cellfun(@isempty, crList)));
+
+if noCRFile || noCRList
+    crResult = struct([]);
+    return
+end
 
 CR = io.read_corner_reflectors(crFile);
 numCRs  = numel(crList);

@@ -1,4 +1,4 @@
-function [phz, cor, ccor, cphz] = compute_interferogram(slc1, slc2, qualityThresh, filterSize, useRobustWeighting, sigma, alpha)
+function [phz, cor, ccor, cphz, meta] = compute_interferogram(slc1, slc2, qualityThresh, filterSize, useRobustWeighting, sigma, alpha)
 %COMPUTE_INTERFEROGRAM Compute wrapped phase and phase quality
 %
 %   [phz, cor] = compute_interferogram(slc1, slc2, qualityThresh, filterSize, ...
@@ -33,8 +33,8 @@ function [phz, cor, ccor, cphz] = compute_interferogram(slc1, slc2, qualityThres
         phz(cor<qualityThresh) = NaN;
     end
 
-    [cphz, ~, ~] = insar.insar_phase_complex(slc1, slc2, filterSize, sigma);
-
+    [cphz, ~, meta] = insar.insar_phase_complex(slc1, slc2, filterSize, sigma);
+    
     % if useCoherenceFilter
     %     [phz, cor, ccor] = insar.compute_interferogram_adaptive(slc1, slc2, ...
     %         qualityThresh, filterSize, sigma, alpha);
