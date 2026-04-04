@@ -3,12 +3,12 @@ clear; close all; clc;
 
 %% --------------------- USER SETTINGS ---------------------
 % 2026 MCS GLSAR
-% sarData(1).date = '20260223';
-% sarData(1).dir = 'E:\MCS\MCS022326\GLSAR\lift1\slc';
-% sarData(1).trajDir = 'E:\MCS\MCS022326\GLSAR\lift1\traj';
-% sarData(1).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.slc'};
-% sarData(1).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
-% 
+sarData(1).date = '20260223';
+sarData(1).dir = 'E:\MCS\MCS022326\GLSAR\lift1\slc';
+sarData(1).trajDir = 'E:\MCS\MCS022326\GLSAR\lift1\traj';
+sarData(1).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.slc'};
+sarData(1).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+
 % sarData(2).date = '20260226';
 % sarData(2).dir = 'E:\MCS\MCS022626\GLSAR\lift2\slc';
 % sarData(2).trajDir = 'E:\MCS\MCS022626\GLSAR\lift2\traj';
@@ -24,7 +24,7 @@ clear; close all; clc;
 % sarData(1).mliFiles = {'camas_2026_02_19_GLSAR_240m_lift4_TMA_2ms_200MHz_20260219T223457_TMA_TX2_RX2_V_V_V.mli_geo.tif',...
 %     'camas_2026_02_19_GLSAR_240m_shifty_lift4_TMA_2ms_200MHz_20260219T224106_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 %
-% % % 240-240-240 Triplet
+% % 240-240-240 Triplet
 % sarData(1).date = '20260219';
 % sarData(1).dir = 'E:\CAMAS\GLSAR\20260219\lift4';
 % sarData(1).trajDir = 'E:\CAMAS\GLSAR\20260219\lift4';
@@ -43,20 +43,20 @@ clear; close all; clc;
 % sarData(3).slcFiles = {'camas_2026_02_19_GLSAR_240m_lift2_TMA_2ms_200MHz_20260219T205715_TMA_TX2_RX2_V_V_V.slc'};
 % sarData(3).mliFiles = {'camas_2026_02_19_GLSAR_240m_lift2_TMA_2ms_200MHz_20260219T205715_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
-% GLSAR 120 AGL Triplet
-sarData(1).date = '20260219';
-sarData(1).dir = 'E:\CAMAS\GLSAR\20260219\lift1\slc';
-sarData(1).trajDir = 'E:\CAMAS\GLSAR\20260219\lift1\traj';
-sarData(1).slcFiles = {'camas_2026_02_19_GLSAR_120m_lift1_TMA_2ms_200MHz_20260219T203126_TMA_TX2_RX2_V_V_V.slc'};
-sarData(1).mliFiles = {'camas_2026_02_19_GLSAR_120m_lift1_TMA_2ms_200MHz_20260219T203126_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
-
-sarData(2).date = '20260219';
-sarData(2).dir = 'E:\CAMAS\GLSAR\20260219\lift5\slc';
-sarData(2).trajDir = 'E:\CAMAS\GLSAR\20260219\lift5\traj';
-sarData(2).slcFiles = {'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231031_TMA_TX1_RX1_H_H_H.slc',...
-    'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231637_TMA_TX1_RX1_H_H_H.slc'};
-sarData(2).mliFiles = {'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231031_TMA_TX1_RX1_H_H_H.mli_geo.tif',...
-    'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231637_TMA_TX1_RX1_H_H_H.mli_geo.tif'};
+% % GLSAR 120 AGL Triplet
+% sarData(1).date = '20260219';
+% sarData(1).dir = 'E:\CAMAS\GLSAR\20260219\lift1\slc';
+% sarData(1).trajDir = 'E:\CAMAS\GLSAR\20260219\lift1\traj';
+% sarData(1).slcFiles = {'camas_2026_02_19_GLSAR_120m_lift1_TMA_2ms_200MHz_20260219T203126_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(1).mliFiles = {'camas_2026_02_19_GLSAR_120m_lift1_TMA_2ms_200MHz_20260219T203126_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+% 
+% sarData(2).date = '20260219';
+% sarData(2).dir = 'E:\CAMAS\GLSAR\20260219\lift5\slc';
+% sarData(2).trajDir = 'E:\CAMAS\GLSAR\20260219\lift5\traj';
+% sarData(2).slcFiles = {'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231031_TMA_TX2_RX2_V_V_V.slc',...
+%     'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231637_TMA_TX2_RX2_V_V_V.slc'};
+% sarData(2).mliFiles = {'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231031_TMA_TX2_RX2_V_V_V.mli_geo.tif',...
+%     'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_20260219T231637_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
 % WCP GLSAR 091024
 % sarData(1).date = '20250910';
@@ -184,14 +184,14 @@ sarData(2).mliFiles = {'camas_2026_02_19_GLSAR_120m_lift5_TMA_2ms_200MHz_2026021
 % demData.vegFn  = '20240320_MCS_canopyHeight_CarSAR_UAS_50cm.tif';
 
 % CAMAS
-demData.dir = 'E:\CAMAS\DEM';
-demData.demFn = '2026_Camas_South.tif';
-demData.vegFn  = 'WCPvegetationHeight.tif';
+% demData.dir = 'E:\CAMAS\DEM';
+% demData.demFn = '2026_Camas_South.tif';
+% demData.vegFn  = 'WCPvegetationHeight.tif';
 
 % MCS 2026
-% demData.dir = 'E:\MCS\MCS022326\dem';
-% demData.demFn = '2026_MCS_Trim.tif';
-% demData.vegFn  = 'WCPvegetationHeight.tif';
+demData.dir = 'E:\MCS\MCS022326\dem';
+demData.demFn = '2026_MCS_Trim.tif';
+demData.vegFn  = '20260222_MCS_vegHeight_Trim.tif';
 
 % Processing Parameters
 params.c          = 0.3;      % Wave speed sonstant (m/ns)
@@ -203,7 +203,8 @@ params.filterSize = 5;        % Multilook filter window size (pixels)
 
 % Data Export (Under Construction)
 % Out Direcrtory
-outDir = 'E:\CAMAS\GLSAR\20260219\Export120';
+% outDir = 'E:\CAMAS\GLSAR\20260219\Export240';
+outDir = 'E:\MCS\MCS022326\GLSAR\Export';
 
 % Colorbars
 cmap = csvread('./colormaps/RdYlBu.csv');
@@ -213,8 +214,15 @@ storeCmap = cmap;
 %% ---------- Load DEM and Vegetation Rasters ----------
 % Read once, interpolate to MLI grid later
 [demRaw, Rdem, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.dir, demData.demFn));
-% [vegRaw, Rveg, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.dir, demData.vegFn));
+[vegRaw, Rveg, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.dir, demData.vegFn));
 
+% Check for Non-Existant Values set to NaN
+nanIx = demRaw <=0;
+demRaw(nanIx) = NaN;
+if exist("vegRaw","var")
+    nanIx = vegRaw <=0;
+    vegRaw(nanIx) = NaN;
+end
 %% ---------- Load Each MLI Frame & Store DEM Data ----------
 fprintf('Loading MLI - SLC - DEM - Data\n')
 tic
@@ -240,17 +248,17 @@ for ii = 1:numel(sarData)
         % Interpolate DEM + vegetation to MLI raster grid
         [Xq, Yq] = worldGrid(R);
         demInterp = utils.interp_to_radar_grid(demRaw, Rdem, Xq, Yq);
-        % vegInterp = utils.interp_to_radar_grid(vegRaw, Rveg, Xq, Yq);
+        vegInterp = utils.interp_to_radar_grid(vegRaw, Rveg, Xq, Yq);
 
         % NaN masking
         % nanMask = demInterp < 0 | vegInterp > 100 | isnan(demInterp);
         nanMask = demInterp < 0  | isnan(demInterp);
         demInterp(nanMask) = NaN;
-        % vegInterp(nanMask) = NaN;
+        vegInterp(nanMask) = NaN;
 
         % Store DEM + veg + mask
         demData.dem = demInterp;
-        % demData.veg = vegInterp;
+        demData.veg = vegInterp;
         demData.nanMask = nanMask;
         end
         else
@@ -365,22 +373,23 @@ tic
 % % Choose CR
 % crName = {'CRC1','CRC2'};
 % % MCS
-% crDir = 'E:\MCS\MCS_CR_SM_25';
+crDir = 'E:\MCS\MCS_CR_SM_25';
 % % crFn = 'MCS_CRs_2025.csv';
 % % crFn = 'MCS_CRs_2024.csv';
-% crFn = 'MCS_CRs_2026_Corrected.csv';
-% crPath = fullfile(crDir,crFn);
-% crName = {'CR1','CR2'};
-
-% Camas 2026
-crDir = 'E:\CAMAS\CRs';
-crFn = 'Camas_2026_CRs_field.csv';
+crFn = 'MCS_CRs_2026_Corrected.csv';
 crPath = fullfile(crDir,crFn);
-crName = {'CR1','CR2','CR3','CR4'};
+crName = {'CR1','CR2'};
+
+% Camas 2026test
+% crDir = 'E:\CAMAS\CRs';
+% crFn = 'Camas_2026_CRs_Corrected.csv';
+% crPath = fullfile(crDir,crFn);
+% crName = {'CR1','CR2','CR3','CR4'};
 
 % crDir = [];
 % crFn = [];
 % crPath = fullfile(crDir,crFn);
+% crPath = [];
 % crName = {[]};
 
 % crPath = fullfile(crDir,crFn);
@@ -429,12 +438,46 @@ fprintf('SLC processing complete. Elapsed time: %.2f seconds\n', toc);
 fprintf('Interferometric Processing \n');
 tic
 params.filterSize = 9;
-unwrapOpts.method = 'multiseed'; %'multiseed', 'none'
+unwrapOpts.method = 'none'; %'multiseed', 'none'
 unwrapOpts.qualityThresh = 0.3;
 unwrapOpts.rampRemoval.enable = false;
 unwrapOpts.sigma = 5;
 unwrapOpts.pairingMode = 'allCombos';
-[insarData, unwrapOpts] = insar.process_interferometric_phase(sarData, geomData, CR, params, unwrapOpts);
+
+% Phase Fill Options Whew Doggy
+unwrapOpts.phaseFill.enable = true;
+unwrapOpts.phaseFill.method = 'ml';
+
+unwrapOpts.phaseFill.trainCohThresh = 0.75;
+unwrapOpts.phaseFill.maxTrainDistToCR = 250;
+unwrapOpts.phaseFill.sameWrapThresh = 1.0;
+
+unwrapOpts.phaseFill.crRadiusPx = 100;
+unwrapOpts.phaseFill.maxGraphHops = 50;
+unwrapOpts.phaseFill.includeGapEdges = false;
+
+unwrapOpts.phaseFill.maxTrainSamples = 100000;
+unwrapOpts.phaseFill.modelType = 'bag';
+unwrapOpts.phaseFill.numTrees = 250;
+unwrapOpts.phaseFill.minLeafSize = 15;
+unwrapOpts.phaseFill.minValidFrac = 0.25;
+unwrapOpts.phaseFill.learnRate = 0.05;
+
+unwrapOpts.phaseFill.selectedFeatures = {'Z','V','slope','aspect_sin','aspect_cos','power','cor','incidence'};
+
+unwrapOpts.phaseFill.predCohThresh = 0.25;
+unwrapOpts.phaseFill.maxFillDistance = 500;
+unwrapOpts.phaseFill.maxPredictDistToCR = inf;
+unwrapOpts.phaseFill.maxPredictDistToDirectSolved = 150;
+unwrapOpts.phaseFill.smoothSigma = 3;
+unwrapOpts.phaseFill.preserveTrusted = true;
+
+unwrapOpts.phaseFill.qualitySigma = 5;
+unwrapOpts.phaseFill.qualityMinValidFrac = 0.35;
+unwrapOpts.phaseFill.qualityThreshold = [];   % or 0.7 if you want a masked product too
+unwrapOpts.phaseFill.storeModelInfo = false;
+
+[insarData, unwrapOpts] = insar.process_interferometric_phase(sarData, geomData, demData, CR, params, unwrapOpts);
 insarClosureData = insar.compute_insar_closure_bias(insarData);
 fprintf('InSAR processing complete. Elapsed time: %.2f seconds\n', toc);
 
@@ -457,8 +500,12 @@ exportOpts.includeLonLat = false;      % keep file size reasonable
 % Naming linkage (IMPORTANT)
 exportOpts.sarDataForNaming  = sarData;
 exportOpts.geomDataForNaming = geomData;
-exportOpts.runLabel = 'CAMAS';
+% exportOpts.runLabel = 'CAMAS';
 % exportOpts.exportSubdir = 'CAMAS_validation_run01'; % Manual Dir Naming
+exportOpts.runLabel = 'MCS';
+% exportOpts.exportSubdir = 'MCS_validation_run01'; % Manual Dir Naming
+
+
 
 % Figure Export
 cmap = [[1,1,1];storeCmap];
@@ -485,7 +532,7 @@ exportOpts.plotOpts.sar.mli = struct( ...
 
 exportOpts.plotOpts.sar.db = struct( ...
     'cmap', cmap, ...
-    'climVals', [-5 20],...
+    'climVals', [-30 0],...
     'showHillshade', true,...
     'titleText', 'Multi-Looked Intensity',...
     'cbarLabel', 'Power (dB)');
@@ -532,6 +579,20 @@ exportOpts.plotOpts.closure.closureMap = struct( ...
     'titleText', 'Phase Closure',...
     'cbarLabel', '\Delta \phi Bias (rad)');
 
+exportOpts.plotOpts.insar.refScreen = struct( ...
+    'titleText', 'Reference Screen', ...
+    'cbarLabel', 'Phase (rad)', ...
+    'cmap', cmap, ...
+    'phasePiLocked', true, ...
+    'showHillshade', true);
+
+exportOpts.plotOpts.insar.refScreenWrapped = struct( ...
+    'titleText', 'Wrapped Reference Screen', ...
+    'cbarLabel', 'Phase (rad)', ...
+    'cmap', cmap, ...
+    'climVals', [-pi pi], ...
+    'showHillshade', true);
+
 % Big Smoke
 fprintf('Data Exporting \n');
 tic
@@ -551,7 +612,7 @@ cohIx = find(cohMask);
 % cor = coh;
 % Power
 figure();
-subplot(1,2,1)
+% subplot(1,2,1)
 imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
 utils.freezeColors; hold on;
 hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,db,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
@@ -559,7 +620,7 @@ ylabel(hc,'Power (dB)','fontname','serif','fontweight','bold','fontsize',14)
 % xlabel('Longitude');ylabel('Latitude');
 xlabel('Easting (km)');ylabel('Northing (km)');
 clim([quantile(db(:),[0.1,0.975])])
-clim([-30 10])
+clim([-30 0])
 % clim([-30 10])
 set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
 title('a) White Clouds Preserve: 09/10/25')
@@ -589,13 +650,13 @@ phz(cohIx) = NaN;
 subplot(1,2,2)
 imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
 utils.freezeColors; hold on;
-hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,phz,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,phz,'AlphaData',0.625);daspect([1,1,1]);colormap([[1,1,1];cmap]);hc=colorbar;
 ylabel(hc,'\Delta \phi (rad)','fontname','serif','fontweight','bold','fontsize',14)
 xlabel('Easting (km)');ylabel('Northing (km)');
 % xlabel('Longitude');ylabel('Latitude');
 clim([-2.*pi 2.*pi])
 % clim([quantile(deltaLWC(deltaLWC>0),[0.05,0.95])])
-% clim([-3.*pi 3.*pi])
+% % clim([-3.*pi 3.*pi])
 set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
 title('b) White Clouds Preserve: 09/10/25')
 
@@ -678,14 +739,14 @@ end
 figure();
 imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
 utils.freezeColors; hold on;
-hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,insarData(1).phzReferenced - insarData(1).refScreen,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
-% ylabel(hc,'Phase Reference Screen (\Delta \phi)','fontname','serif','fontweight','bold','fontsize',14)
-ylabel(hc,'Residual Phase (\Delta \phi)','fontname','serif','fontweight','bold','fontsize',14)
+hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,insarData(1).refScreen,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+ylabel(hc,'Phase Reference Screen (\Delta \phi)','fontname','serif','fontweight','bold','fontsize',14)
+% ylabel(hc,'Residual Phase (\Delta \phi)','fontname','serif','fontweight','bold','fontsize',14)
 
 % xlabel('Longitude');ylabel('Latitude');
 xlabel('Easting (km)');ylabel('Northing (km)');
 % clim([quantile(db(:),[0.1,0.975])])
-clim([-2.*pi 2.*pi])
+clim([-pi pi])
 % clim([-30 10])
 set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
 title('a) White Clouds Preserve: 09/10/25')
@@ -733,29 +794,34 @@ ytickformat('%.1f')
 
 % Trajectory Figure
 % rmsd = sqrt((sarData(1).traj{1}(:,1)- sarData(2).traj{1}(:,1)).^2+(sarData(1).traj{1}(:,2)- sarData(2).traj{1}(:,2)).^2+(sarData(1).traj{1}(:,3)- sarData(2).traj{1}(:,3)).^2);
-rmsd = sqrt((sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,1)- sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,1)).^2+(sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,2)- sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,2)).^2+(sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,3)- sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,3)).^2);
-azAxis = sarData(geomData.pairResults.ii1).azimuthAxis{1};
+k = 1;
+rmsd = sqrt((sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,1)- sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,1)).^2+(sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,2)- sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,2)).^2+(sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,3)- sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,3)).^2);
+azAxis = sarData(geomData.pairResults(k).ii1).azimuthAxis{1};
 figure();
 subplot(4,1,1)
-plot(azAxis,sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,1)-sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,1),'k','LineWidth',2);
+plot(azAxis,sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,1)-sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,1),'k','LineWidth',2);
 ylabel('Easting Difference (m)')
 % ylim([-1 1])
 % ylim([mean(sarData(1).traj{1}(:,1)-sarData(1).traj{2}(:,1))-1,mean(sarData(1).traj{1}(:,1)-sarData(1).traj{2}(:,1))+1])
 grid on; grid minor;
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',10)
 subplot(4,1,2)
-plot(azAxis,sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,2)-sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,2),'k','LineWidth',2);
+plot(azAxis,sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,2)-sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,2),'k','LineWidth',2);
 ylabel('Northing Difference (m)')
 % ylim([-1 1])
 % ylim([mean(sarData(1).traj{1}(:,2)-sarData(1).traj{2}(:,2))-1, mean(sarData(1).traj{1}(:,2)-sarData(1).traj{2}(:,2))+1])
 grid on; grid minor;
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',10)
 subplot(4,1,3)
-plot(azAxis,sarData(geomData.pairResults.ii1).traj{geomData.pairResults.jj1}(:,3)- sarData(geomData.pairResults.ii2).traj{geomData.pairResults.jj2}(:,3),'k','LineWidth',2);
+plot(azAxis,sarData(geomData.pairResults(k).ii1).traj{geomData.pairResults(k).jj1}(:,3)- sarData(geomData.pairResults(k).ii2).traj{geomData.pairResults(k).jj2}(:,3),'k','LineWidth',2);
 ylabel('Altitude Difference (m)')
 xlabel('Distance (m)')
 grid on; grid minor;
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',10)
 subplot(4,1,4)
 plot(azAxis,rmsd,'k','LineWidth',2);
 ylabel('Mean Difference (m)')
 xlabel('Distance (m)')
 grid on; grid minor;
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',11)
 

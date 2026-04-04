@@ -49,6 +49,9 @@ cor = double(insarPair.cor);
 % --- DEM elevation
 Z = get_dem_z(demData, nr, nc);
 
+% --- DEM Vegetation Height
+V = get_dem_veg(demData, nr, nc);
+
 % --- Terrain derivatives
 [dZdx, dZdy] = gradient(Z);
 slope = atan(sqrt(dZdx.^2 + dZdy.^2));
@@ -132,6 +135,7 @@ feat.cor = cor;
 feat.X = X;
 feat.Y = Y;
 feat.Z = Z;
+feat.V = V;
 feat.slope = slope;
 feat.aspect_sin = aspect_sin;
 feat.aspect_cos = aspect_cos;
@@ -190,6 +194,22 @@ for i = 1:numel(cand)
 end
 
 Z = nan(nr, nc);
+
+end
+
+% -------------------------------------------------------------------------
+function V = get_dem_veg(demData, nr, nc)
+
+cand = {'V','veg'};
+for i = 1:numel(cand)
+    f = cand{i};
+    if isfield(demData, f) && isequal(size(demData.(f)), [nr nc])
+        V = double(demData.(f));
+        return;
+    end
+end
+
+V = nan(nr, nc);
 
 end
 

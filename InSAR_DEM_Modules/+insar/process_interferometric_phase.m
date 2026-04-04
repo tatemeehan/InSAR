@@ -1,4 +1,4 @@
-function [insarData, unwrapOpts] = process_interferometric_phase(sarData, geomData, crResult, params, unwrapOpts)
+function [insarData, unwrapOpts] = process_interferometric_phase(sarData, geomData, demData, crResult, params, unwrapOpts)
 %PROCESS_INTERFEROMETRIC_PHASE Computes wrapped, unwrapped, and referenced phase.
 % Reference hierarchy is now sensor-perspective and CR-driven:
 %   0 valid CRs -> sceneMean
@@ -40,6 +40,53 @@ if ~isfield(unwrapOpts,'basinUseReferenceScreen'), unwrapOpts.basinUseReferenceS
 if ~isfield(unwrapOpts,'basinScreenCohThresh'), unwrapOpts.basinScreenCohThresh = max(0.4, unwrapOpts.qualityThresh); end
 if ~isfield(unwrapOpts,'basinAnchorPolicy'), unwrapOpts.basinAnchorPolicy = 'crFirst'; end
 if ~isfield(unwrapOpts,'storeUnwrapMeta'), unwrapOpts.storeUnwrapMeta = true; end
+
+% -------------------------
+% ML / Gaussian phase inpainting defaults
+% -------------------------
+if ~isfield(unwrapOpts, 'phaseFill')
+    unwrapOpts.phaseFill = struct();
+end
+
+if ~isfield(unwrapOpts.phaseFill, 'enable'), unwrapOpts.phaseFill.enable = false; end
+if ~isfield(unwrapOpts.phaseFill, 'method'), unwrapOpts.phaseFill.method = 'ml'; end   % 'ml' or 'gaussian'
+
+% --- shared support defaults
+if ~isfield(unwrapOpts.phaseFill, 'trainCohThresh'), unwrapOpts.phaseFill.trainCohThresh = 0.75; end
+if ~isfield(unwrapOpts.phaseFill, 'maxTrainDistToCR'), unwrapOpts.phaseFill.maxTrainDistToCR = 250; end
+if ~isfield(unwrapOpts.phaseFill, 'sameWrapThresh'), unwrapOpts.phaseFill.sameWrapThresh = 1.0; end
+
+% --- CR support graph defaults
+if ~isfield(unwrapOpts.phaseFill, 'crRadiusPx'), unwrapOpts.phaseFill.crRadiusPx = 100; end
+if ~isfield(unwrapOpts.phaseFill, 'maxGraphHops'), unwrapOpts.phaseFill.maxGraphHops = 50; end
+if ~isfield(unwrapOpts.phaseFill, 'includeGapEdges'), unwrapOpts.phaseFill.includeGapEdges = false; end
+
+% --- ML defaults
+if ~isfield(unwrapOpts.phaseFill, 'maxTrainSamples'), unwrapOpts.phaseFill.maxTrainSamples = 100000; end
+if ~isfield(unwrapOpts.phaseFill, 'modelType'), unwrapOpts.phaseFill.modelType = 'bag'; end
+if ~isfield(unwrapOpts.phaseFill, 'numTrees'), unwrapOpts.phaseFill.numTrees = 250; end
+if ~isfield(unwrapOpts.phaseFill, 'minLeafSize'), unwrapOpts.phaseFill.minLeafSize = 15; end
+if ~isfield(unwrapOpts.phaseFill, 'minValidFrac'), unwrapOpts.phaseFill.minValidFrac = 0.25; end
+if ~isfield(unwrapOpts.phaseFill, 'learnRate'), unwrapOpts.phaseFill.learnRate = 0.05; end
+
+% best working feature set, incidence optional
+if ~isfield(unwrapOpts.phaseFill, 'selectedFeatures')
+    unwrapOpts.phaseFill.selectedFeatures = {'Z','V','slope','aspect_sin','aspect_cos','power','cor','incidence'};
+end
+
+% --- prediction defaults
+if ~isfield(unwrapOpts.phaseFill, 'predCohThresh'), unwrapOpts.phaseFill.predCohThresh = 0.25; end
+if ~isfield(unwrapOpts.phaseFill, 'maxFillDistance'), unwrapOpts.phaseFill.maxFillDistance = 500; end
+if ~isfield(unwrapOpts.phaseFill, 'maxPredictDistToCR'), unwrapOpts.phaseFill.maxPredictDistToCR = inf; end
+if ~isfield(unwrapOpts.phaseFill, 'maxPredictDistToDirectSolved'), unwrapOpts.phaseFill.maxPredictDistToDirectSolved = 150; end
+if ~isfield(unwrapOpts.phaseFill, 'smoothSigma'), unwrapOpts.phaseFill.smoothSigma = 3; end
+if ~isfield(unwrapOpts.phaseFill, 'preserveTrusted'), unwrapOpts.phaseFill.preserveTrusted = true; end
+
+% --- quality defaults
+if ~isfield(unwrapOpts.phaseFill, 'qualitySigma'), unwrapOpts.phaseFill.qualitySigma = 5; end
+if ~isfield(unwrapOpts.phaseFill, 'qualityMinValidFrac'), unwrapOpts.phaseFill.qualityMinValidFrac = 0.35; end
+if ~isfield(unwrapOpts.phaseFill, 'qualityThreshold'), unwrapOpts.phaseFill.qualityThreshold = []; end   % e.g. 0.7 or []
+if ~isfield(unwrapOpts.phaseFill, 'storeModelInfo'), unwrapOpts.phaseFill.storeModelInfo = false; end
 
 % Pair construction
 if ~isfield(unwrapOpts,'pairingMode'), unwrapOpts.pairingMode = 'inter'; end
@@ -88,6 +135,12 @@ if ~isfield(unwrapOpts, 'targetSensitivity'), unwrapOpts.targetSensitivity = 5; 
 if ~isfield(unwrapOpts, 'phaseNoiseStd') || isempty(unwrapOpts.phaseNoiseStd),unwrapOpts.phaseNoiseStd = 0.1; end
 if ~isfield(unwrapOpts, 'estimatePhaseNoiseFromCoherence'), unwrapOpts.estimatePhaseNoiseFromCoherence = true; end
 if ~isfield(unwrapOpts, 'nLooksEffective'),unwrapOpts.nLooksEffective = 1; end
+if ~isfield(unwrapOpts.phaseFill, 'useFilledForPenetration')
+    unwrapOpts.phaseFill.useFilledForPenetration = true;
+end
+if ~isfield(unwrapOpts.phaseFill, 'useMaskedFilledForPenetration')
+    unwrapOpts.phaseFill.useMaskedFilledForPenetration = false;
+end
 
 
 pairs = utils.build_pairs(sarData, pairOpts);
@@ -237,6 +290,28 @@ for p = 1:numel(pairs)
     phzWrappedReferenced = angle(exp(1i * (phzWrapped - refScreenWrapped)));
 
     % -------------------------
+    % ML/Gaussian interferogram inpainting
+    % -------------------------
+    phaseFill = struct();
+    if unwrapOpts.phaseFill.enable
+        insarPair = struct();
+        insarPair.phzReferenced = phzReferenced;
+        insarPair.cor = cor;
+
+        if isfield(sarData(i), 'db') && numel(sarData(i).db) >= b1
+            insarPair.power = sarData(i).db{b1};
+        end
+
+        basinOwnerLocal = [];
+        if isfield(unwrapMeta, 'owner') && ~isempty(unwrapMeta.owner)
+            basinOwnerLocal = unwrapMeta.owner;
+        end
+
+        phaseFill = insar.inpaint_interferogram_ml( ...
+            insarPair, G, basinOwnerLocal, basinMeta, crResult, demData, unwrapOpts.phaseFill);
+    end
+
+    % -------------------------
     % Store
     % -------------------------
     k = k + 1;
@@ -291,44 +366,86 @@ for p = 1:numel(pairs)
         end
     end
 
-% -------------------------
-% Penetration
-% -------------------------
-if isfield(G,'Bperp') && ~isempty(G.Bperp)
+    if unwrapOpts.phaseFill.enable
+        insarData(k).phzReferencedFilled = phaseFill.phzFilled;
+        insarData(k).phzWrappedReferencedFilled = phaseFill.phzWrappedFilled;
+        insarData(k).phaseQuality = phaseFill.phaseQuality;  % synthetic coherence metric
+        insarData(k).phaseQualitySupportFrac = phaseFill.qualitySupportFrac;
+        insarData(k).phaseFillTrustedMask = phaseFill.trustedMask;
+        insarData(k).phaseFillCRSupportMask = phaseFill.crSupportMask;
+        insarData(k).phaseFillSameWrapMask = phaseFill.sameWrapMask;
+        insarData(k).phaseFillSupport = phaseFill.support;
 
-    % --- Pair-average slant range ---
-    if isfield(G,'slant') && ~isempty(G.slant) && isfield(G,'slant2') && ~isempty(G.slant2)
-        rslant = 0.5 * (G.slant + G.slant2);
-    elseif isfield(G,'slant') && ~isempty(G.slant)
-        rslant = G.slant;
-    elseif isfield(G,'slant2') && ~isempty(G.slant2)
-        rslant = G.slant2;
-    else
-        rslant = [];
+        if ~isempty(phaseFill.acceptMask)
+            insarData(k).phzReferencedFilledMasked = phaseFill.phzFilledMasked;
+            insarData(k).phaseFillAcceptMask = phaseFill.acceptMask;
+        end
+
+        if unwrapOpts.phaseFill.storeModelInfo && isfield(phaseFill, 'modelInfo')
+            insarData(k).phaseFillModelInfo = phaseFill.modelInfo;
+        end
+    end
+    % -------------------------
+    % Phase source for penetration
+    % -------------------------
+    phzForPenetration = phzReferenced;
+    phzForPenetrationSource = 'referenced';
+
+    if unwrapOpts.phaseFill.enable && isfield(unwrapOpts.phaseFill, 'useFilledForPenetration') && ...
+            unwrapOpts.phaseFill.useFilledForPenetration
+
+        if isfield(unwrapOpts.phaseFill, 'useMaskedFilledForPenetration') && ...
+                unwrapOpts.phaseFill.useMaskedFilledForPenetration && ...
+                isfield(phaseFill, 'phzFilledMasked') && ~isempty(phaseFill.phzFilledMasked)
+
+            phzForPenetration = phaseFill.phzFilledMasked;
+            phzForPenetrationSource = 'filledMasked';
+
+        elseif isfield(phaseFill, 'phzFilled') && ~isempty(phaseFill.phzFilled)
+
+            phzForPenetration = phaseFill.phzFilled;
+            phzForPenetrationSource = 'filled';
+        end
     end
 
-    % --- Pair-average incidence angle ---
-    if isfield(G,'incidence') && ~isempty(G.incidence) && isfield(G,'incidence2') && ~isempty(G.incidence2)
-        inc = 0.5 * (G.incidence + G.incidence2);
-    elseif isfield(G,'incidence') && ~isempty(G.incidence)
-        inc = G.incidence;
-    elseif isfield(G,'incidence2') && ~isempty(G.incidence2)
-        inc = G.incidence2;
-    else
-        inc = [];
-    end
+    % -------------------------
+    % Penetration
+    % -------------------------
+    if isfield(G,'Bperp') && ~isempty(G.Bperp)
 
-    Bperp = G.Bperp;
+        % --- Pair-average slant range ---
+        if isfield(G,'slant') && ~isempty(G.slant) && isfield(G,'slant2') && ~isempty(G.slant2)
+            rslant = 0.5 * (G.slant + G.slant2);
+        elseif isfield(G,'slant') && ~isempty(G.slant)
+            rslant = G.slant;
+        elseif isfield(G,'slant2') && ~isempty(G.slant2)
+            rslant = G.slant2;
+        else
+            rslant = [];
+        end
 
-    if isempty(rslant) || isempty(inc)
-        warning('Missing slant/incidence fields for geom idx %d. Skipping penetration.', idxG);
-        insarData(k).penetration = single(NaN(size(phzReferenced), 'single'));
-        insarData(k).penetrationValid = false;
-        insarData(k).penetrationValidMask = false(size(phzReferenced));
-        insarData(k).penetrationSensitivity = single(NaN(size(phzReferenced), 'single'));      % m/rad
-        insarData(k).penetrationDetectableHeight = single(NaN(size(phzReferenced), 'single')); % m
-        return
-    end
+        % --- Pair-average incidence angle ---
+        if isfield(G,'incidence') && ~isempty(G.incidence) && isfield(G,'incidence2') && ~isempty(G.incidence2)
+            inc = 0.5 * (G.incidence + G.incidence2);
+        elseif isfield(G,'incidence') && ~isempty(G.incidence)
+            inc = G.incidence;
+        elseif isfield(G,'incidence2') && ~isempty(G.incidence2)
+            inc = G.incidence2;
+        else
+            inc = [];
+        end
+
+        Bperp = G.Bperp;
+
+        if isempty(rslant) || isempty(inc)
+            warning('Missing slant/incidence fields for geom idx %d. Skipping penetration.', idxG);
+            insarData(k).penetration = single(NaN(size(phzForPenetration), 'single'));
+            insarData(k).penetrationValid = false;
+            insarData(k).penetrationValidMask = false(size(phzForPenetration));
+            insarData(k).penetrationSensitivity = single(NaN(size(phzForPenetration), 'single'));      % m/rad
+            insarData(k).penetrationDetectableHeight = single(NaN(size(phzForPenetration), 'single')); % m
+            continue
+        end
 
     % Degrees -> radians guard
     if any(inc(:) > pi, 'all')
@@ -359,9 +476,9 @@ if isfield(G,'Bperp') && ~isempty(G.Bperp)
                    (4 .* pi .* target_sensitivity .* sin_theta);
 
     % --- Pixelwise validity mask ---
-    validMask = isfinite(phzReferenced) & isfinite(sensitivity_map) & ...
-                isfinite(Bperp_thresh) & isfinite(abs(Bperp)) & ...
-                (abs(Bperp) >= Bperp_thresh);
+    validMask = isfinite(phzForPenetration) & isfinite(sensitivity_map) & ...
+        isfinite(Bperp_thresh) & isfinite(abs(Bperp)) & ...
+        (abs(Bperp) >= Bperp_thresh);
 
     % --- Minimum detectable height / penetration change map ---
     detectable_height_map = sensitivity_map .* phase_noise_std;
@@ -372,10 +489,10 @@ if isfield(G,'Bperp') && ~isempty(G.Bperp)
     frac_valid  = mean(validMask(:), 'omitnan');
 
     % --- Penetration estimate ---
-    penetration = nan(size(phzReferenced), 'single');
+    penetration = nan(size(phzForPenetration), 'single');
 
     pen_valid = insar.phase_to_penetration( ...
-        phzReferenced(validMask), params.lambda, Bperp(validMask), ...
+        phzForPenetration(validMask), params.lambda, Bperp(validMask), ...
         rslant(validMask), inc(validMask));
 
     penetration(validMask) = single(pen_valid);
@@ -384,6 +501,7 @@ if isfield(G,'Bperp') && ~isempty(G.Bperp)
     insarData(k).penetration = penetration;
     insarData(k).penetrationValid = any(validMask(:));
     insarData(k).penetrationValidMask = validMask;
+    insarData(k).penetrationPhaseSource = phzForPenetrationSource;
 
     insarData(k).penetrationSensitivity = single(sensitivity_map);            % m/rad
     insarData(k).penetrationDetectableHeight = single(detectable_height_map); % m
@@ -405,11 +523,11 @@ if isfield(G,'Bperp') && ~isempty(G.Bperp)
 
 else
     warning('Missing geometry fields for geom idx %d. Skipping penetration.', idxG);
-    insarData(k).penetration = single(NaN(size(phzReferenced), 'single'));
+    insarData(k).penetration = single(NaN(size(phzForPenetration), 'single'));
     insarData(k).penetrationValid = false;
-    insarData(k).penetrationValidMask = false(size(phzReferenced));
-    insarData(k).penetrationSensitivity = single(NaN(size(phzReferenced), 'single'));
-    insarData(k).penetrationDetectableHeight = single(NaN(size(phzReferenced), 'single'));
+    insarData(k).penetrationValidMask = false(size(phzForPenetration));
+    insarData(k).penetrationSensitivity = single(NaN(size(phzForPenetration), 'single'));
+    insarData(k).penetrationDetectableHeight = single(NaN(size(phzForPenetration), 'single'));
 end
 
     fprintf('Processed (dir %d,b%02d) × (dir %d,b%02d). Elapsed: %.2f s\n', ...

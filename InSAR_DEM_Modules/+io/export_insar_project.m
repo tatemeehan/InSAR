@@ -121,6 +121,7 @@ if isfield(opts,'exportFigures') && opts.exportFigures
     export_sar_figures(fullfile(figDir, 'sar'), demSave, sarSave, opts);
     export_insar_figures(fullfile(figDir, 'insar'), demSave, insarSave, opts);
     export_closure_figures(fullfile(figDir, 'closure'), demSave, closureSave, opts);
+    export_geometry_figures(fullfile(figDir, 'geometry'), sarSave, geomSave, opts);
 end
 
 exportInfo = struct();
@@ -968,6 +969,59 @@ set(ax, 'FontName', 'serif', 'FontWeight', 'bold', 'FontSize', 12);
 daspect([1,1,1])
 end
 
+% Trajectory Figure
+function hFig = plot_trajectory_difference_figure(sarData, ii1, jj1, ii2, jj2, opts)
+
+traj1 = sarData(ii1).traj{jj1};
+traj2 = sarData(ii2).traj{jj2};
+
+if isfield(sarData(ii1), 'azimuthAxis') && numel(sarData(ii1).azimuthAxis) >= jj1 && ~isempty(sarData(ii1).azimuthAxis{jj1})
+    azAxis = sarData(ii1).azimuthAxis{jj1};
+else
+    azAxis = 1:size(traj1,1);
+end
+
+dE = traj1(:,1) - traj2(:,1);
+dN = traj1(:,2) - traj2(:,2);
+dZ = traj1(:,3) - traj2(:,3);
+rmsd = sqrt(dE.^2 + dN.^2 + dZ.^2);
+
+vis = 'off';
+if isfield(opts,'figureVisible') && ~isempty(opts.figureVisible)
+    vis = opts.figureVisible;
+end
+
+hFig = figure('Visible', vis, 'Color', 'w');
+
+subplot(4,1,1)
+plot(azAxis, dE, 'k', 'LineWidth', 2);
+ylabel('Easting Diff. (m)')
+grid on; grid minor;
+
+subplot(4,1,2)
+plot(azAxis, dN, 'k', 'LineWidth', 2);
+ylabel('Northing Diff. (m)')
+grid on; grid minor;
+
+subplot(4,1,3)
+plot(azAxis, dZ, 'k', 'LineWidth', 2);
+ylabel('Altitude Diff. (m)')
+xlabel('Distance (m)')
+grid on; grid minor;
+
+subplot(4,1,4)
+plot(azAxis, rmsd, 'k', 'LineWidth', 2);
+ylabel('RMS Diff. (m)')
+xlabel('Distance (m)')
+grid on; grid minor;
+
+sgtitle(sprintf('Trajectory Difference: %s', ...
+    build_pair_name_from_indices(ii1, jj1, ii2, jj2, opts)), ...
+    'Interpreter', 'none');
+
+set(findall(hFig,'Type','axes'), 'FontName','serif', 'FontWeight','bold', 'FontSize',12);
+end
+
 % Figure Save Helper
 function save_figure(hFig, filename, opts)
 if ~isfield(opts,'figureDPI') || isempty(opts.figureDPI)
@@ -1059,6 +1113,20 @@ for k = 1:numel(insarData)
         save_figure(hFig, fullfile(pairDir, ['phase_noise_std.' opts.figureFormat]), opts);
     end
 
+    % --- Reference Screen ---
+    if isfield(insarData(k),'refScreen') && ~isempty(insarData(k).refScreen)
+        plotOpts = get_plot_opts(opts, 'insar', 'refScreen');
+        hFig = plot_raster_map(demData, insarData(k).refScreen, plotOpts);
+        save_figure(hFig, fullfile(pairDir, ['ref_screen.' opts.figureFormat]), opts);
+    end
+
+    % --- Wrapped Reference Screen ---
+    if isfield(insarData(k),'refScreenWrapped') && ~isempty(insarData(k).refScreenWrapped)
+        plotOpts = get_plot_opts(opts, 'insar', 'refScreenWrapped');
+        hFig = plot_raster_map(demData, insarData(k).refScreenWrapped, plotOpts);
+        save_figure(hFig, fullfile(pairDir, ['ref_screen_wrapped.' opts.figureFormat]), opts);
+    end
+
 end
 end
 
@@ -1079,6 +1147,27 @@ for k = 1:numel(closureData)
 
     hFig = plot_raster_map(demData, closureData(k).closureMap, plotOpts);
     save_figure(hFig, fullfile(closureDir, ['closure_map.' opts.figureFormat]), opts);
+end
+end
+
+function export_geometry_figures(outDir, sarData, geomData, opts)
+mkdir_if_needed(outDir);
+
+if ~isfield(geomData,'pairList') || isempty(geomData.pairList)
+    return;
+end
+
+for k = 1:size(geomData.pairList, 1)
+    ii1 = geomData.pairList(k,1);
+    jj1 = geomData.pairList(k,2);
+    ii2 = geomData.pairList(k,3);
+    jj2 = geomData.pairList(k,4);
+
+    pairDir = fullfile(outDir, build_pair_name_from_indices(ii1, jj1, ii2, jj2, opts));
+    mkdir_if_needed(pairDir);
+
+    hFig = plot_trajectory_difference_figure(sarData, ii1, jj1, ii2, jj2, opts);
+    save_figure(hFig, fullfile(pairDir, ['trajectory_difference.' opts.figureFormat]), opts);
 end
 end
 
