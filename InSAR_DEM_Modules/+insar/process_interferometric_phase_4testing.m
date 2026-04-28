@@ -1,4 +1,4 @@
-function [insarData, unwrapOpts] = process_interferometric_phase(sarData, geomData, demData, crResult, params, unwrapOpts)
+function [insarData, unwrapOpts] = process_interferometric_phase_4testing(sarData, geomData, demData, crResult, params, unwrapOpts, insarDataIn)
 %PROCESS_INTERFEROMETRIC_PHASE Computes wrapped, unwrapped, and referenced phase.
 % Reference hierarchy is now sensor-perspective and CR-driven:
 %   0 valid CRs -> sceneMean
@@ -266,6 +266,7 @@ for p = 1:numel(pairs)
     % -------------------------
     % Unwrap
     % -------------------------
+    unwrapOpts.method = 'none';
     switch lower(unwrapOpts.method)
         case 'multiseed'
             % phzUnwrapped = insar.region_grow_unwrap_multiseed(phzWrapped, cor);
@@ -281,7 +282,9 @@ for p = 1:numel(pairs)
             phzUnwrapped = insar.unwrap_goldstein(phzWrapped);
 
         case 'none'
-            phzUnwrapped = phzWrapped;
+            phzUnwrapped = insarDataIn.phzUnwrapped;
+            unwrapMeta = insarDataIn.unwrapMeta;
+            basinMeta = insarDataIn.basinMeta;
 
         otherwise
             error('Unknown unwrap method: %s', unwrapOpts.method);
@@ -328,7 +331,7 @@ for p = 1:numel(pairs)
             basinOwnerLocal = unwrapMeta.owner;
         end
 
-        phaseFill = insar.inpaint_interferogram_ml( ...
+        phaseFill = insar.inpaint_interferogram_ml_og( ...
             insarPair, G, basinOwnerLocal, basinMeta, crResult, demData, unwrapOpts.phaseFill);
     end
 

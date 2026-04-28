@@ -1,0 +1,225 @@
+% DEMO_SNOW_SOIL_PROFILE_MODE
+clear; close all;
+addpath(genpath('E:\MCS\Tinga73\tinga_extended_model_bundle'))
+% --- Fixed settings ---
+f = 1.3e9;
+theta_i = 70;
+Hs = 1.0;
+
+% --- Snow state (your existing calls) ---
+rho = 350;
+lwc = 0.015;
+tempSnow = 273.15;
+eps_w = water_permittivity_maetzler87(f, 273.15);
+eps_snow = wetsnow_permittivity_tinga73_extended(f, tempSnow, rho, lwc, ...
+    @ice_permittivity_maetzler06, eps_w);
+
+% --- Soil fixed state inputs ---
+SWC    = 0.556753;
+EC_dSm = 0.2933;
+Tc     = 17.33;
+sigma_bulk = EC_dSm * 0.1;  % S/m
+
+% Provide your parameter structs
+% Water parameters (Kaatze-polynomial based)
+epssCoefs = [88.119019607843190,-0.484234778121778,0.004464654282766,-2.393188854489220e-05]';
+tauCoefs = [1.736936274509802e-11,-4.823117475060188e-13,5.488493292053644e-15,-2.366013071895416e-17]';
+wparams.epssCoefs   = epssCoefs;   % your 4-coef vec
+wparams.tauCoefs    = tauCoefs;
+wparams.eps_inf     = 4.8;
+wparams.alpha_free  = 0.01;
+wparams.alpha_bound = 0.2;
+wparams.frac_bound  = 0.3;    % 30% of Δε in bound mode (tune later)
+
+tauBW.free_scale  = 1.0;
+tauBW.bound_scale = 5.0;      % bound water ~5× slower than free
+tauBW.B_bound     = 0.02;     % VWC sensitivity (tune)
+tauBW.max_tau     = 5e-10;
+
+% Simple soil defaults, or pass a struct
+soilParams.eps_real_soil = 4.0;
+soilParams.eps_real_clay = 25;
+soilParams.frac_clay     = 0.1;
+
+% Clay Parameters
+clayParams.eps_inf_clay = 5;
+clayParams.tau_clay     = 5e-10;
+clayParams.alpha_clay   = 0.15;
+
+% --- Benchmark scattering params ---
+pars = struct();
+pars.Ls = 5.0;
+pars.Lg = 0.05;
+pars.As = 0.05;
+
+pars.use_roughness = true;
+pars.rough = struct();
+pars.rough.sigma_h = 0.01;
+pars.rough.ell     = 0.25;
+pars.rough.A0      = 1.0;
+pars.rough.Cdiff   = 0.05;           % try 0 .. 1
+pars.rough.psi     = 2*pi*rand;
+% --- Optional PolSAR matrix mode ---
+pars.pol_mode = "matrix"; % 'single' or 'matrix'
+% Polarization
+if strcmp(pars.pol_mode,"single")
+pars.pol = 'HH';  % uses TE
+% or
+% pars.pol = 'VV';  % uses TM
+% HV or VH
+% pars.pol = 'HV';
+end
+pars.rough.Xpol = 0.1;
+pars.rough.psi_x = 2*pi*rand;
+pars.Ag = 1.0; % ignored when use_roughness=true
+
+% --- Enable profile mode ---
+pars.soil_profile = struct();
+pars.soil_profile.enable = true;
+
+% --- Soil profile discretization ---
+pars.soil_profile.zmax = 0.50;
+pars.soil_profile.dz   = 0.001;
+
+% --- Moisture profile (example: wetter near surface, dries with depth) ---
+pars.soil_profile.type   = 'exp';
+pars.soil_profile.VWC0   = 0.125;   % surface VWC
+pars.soil_profile.VWCinf = 0.05;   % deep VWC
+pars.soil_profile.z0     = 0.07;   % 7 cm e-folding depth
+
+% --- Temperature profile (linear: colder at surface, warmer at depth) ---
+% pars.soil_profile.Tc_profile = struct( ...
+%     'type','linear', ...
+%     'Tc0', -3.0, ...    % °C at z=0
+%     'grad', 15.0 );     % °C per meter (=> 0°C at 0.2 m)
+
+% Exponential Temperture Model
+pars.soil_profile.Tc_profile = struct( ...
+    'type','exp', ...
+    'Tc0',  -2.0, ...     % surface (°C)
+    'Tc_inf', 2.0, ...    % deep soil (°C)
+    'zT', 0.10 );         % e-folding depth (m)
+
+
+% --- Enable freezing wrapper ---
+pars.soil_profile.freeze = struct( ...
+    'enable',  true, ...
+    'T0',      0.0, ...
+    'dT',      0.5, ...
+    'p_sigma', 2, ...
+    'mode', 'physical',...
+    'eta_sigma', 2,...
+    'sigma_floor', 0.0);
+% 1) Logistic
+% pars.soil_profile.freeze.uwf = struct('mode','logistic','T0',0,'dT',0.5,'fmin',0.02);
+
+% 2) Temperature-only (fewer knobs)
+% pars.soil_profile.freeze.uwf = struct('mode','temp_only','Tm',0,'gamma',1.2,'fmin',0.02);
+
+% 3) Texture-based (uses soilParams.frac_clay by default)
+pars.soil_profile.freeze.uwf = struct('mode','texture','fmin',0.02);
+
+
+pars.soil_profile.SWC = SWC;
+pars.soil_profile.sigma_bulk = sigma_bulk;
+pars.soil_profile.Tc = Tc;
+
+pars.soil_profile.soilParams = soilParams;
+pars.soil_profile.wparams    = wparams;
+pars.soil_profile.tauBW      = tauBW;
+pars.soil_profile.clayParams = clayParams;
+
+% Snow Parameters
+% pars.snow = struct();
+pars.snow.Xpol  = 0.02;        % snow depol amplitude (0 => no snow HV/VH)
+pars.snow.psi_x = 2*pi*rand;   % random phase for snow cross-pol realization
+% optional:
+pars.snow.VV_scale = 1.0;    % allow VV co-pol snow scale vs HH (default 1)
+
+
+% --- Run one case and plot diagnostics ---
+VWC0 = pars.soil_profile.VWC0;
+eps_g0 = soilPermittivity_advanced(VWC0, SWC, sigma_bulk, soilParams, Tc, f, wparams, tauBW, clayParams);
+
+out = insar_forward_snow_soil_benchmark(theta_i, f, Hs, eps_snow, eps_g0, pars);
+plot_soil_profile_diagnostics(out.profile.diag, f);
+
+% Quick check: show surface vs deep temperature
+fprintf('T(z=0)=%.2f C, T(z=end)=%.2f C\n', out.profile.diag.Tc(1), out.profile.diag.Tc(end));
+
+ix = round(linspace(1, numel(out.profile.diag.z), 6));
+disp(table(out.profile.diag.z(ix), out.profile.diag.Tc(ix), ...
+    real(out.profile.diag.eps(ix)), imag(out.profile.diag.eps(ix)), ...
+    'VariableNames', {'z_m','Tc_C','eps_real','eps_imag'}));
+
+pars.pol = 'TE'; outTE = insar_forward_snow_soil_benchmark(theta_i, f, Hs, eps_snow, eps_g0, pars);
+pars.pol = 'TM'; outTM = insar_forward_snow_soil_benchmark(theta_i, f, Hs, eps_snow, eps_g0, pars);
+
+fprintf('Ag TE: |%.3g|, ang=%.2f deg\n', abs(outTE.Ag), rad2deg(angle(outTE.Ag)));
+fprintf('Ag TM: |%.3g|, ang=%.2f deg\n', abs(outTM.Ag), rad2deg(angle(outTM.Ag)));
+
+fprintf('Eg TE: |%.3g|, ang=%.2f deg\n', abs(outTE.Eg), rad2deg(angle(outTE.Eg)));
+fprintf('Eg TM: |%.3g|, ang=%.2f deg\n', abs(outTM.Eg), rad2deg(angle(outTM.Eg)));
+
+fprintf('E  TE: |%.3g|, ang=%.2f deg\n', abs(outTE.E),  rad2deg(angle(outTE.E)));
+fprintf('E  TM: |%.3g|, ang=%.2f deg\n', abs(outTM.E),  rad2deg(angle(outTM.E)));
+
+% --- Sweep surface VWC ---
+VWC_grid = linspace(0.01, 0.30, 60).';
+
+phiE = zeros(size(VWC_grid));
+phiEg = zeros(size(VWC_grid));
+phiAg = zeros(size(VWC_grid));
+Gamcoh = zeros(size(VWC_grid));
+Gamdiff = zeros(size(VWC_grid));
+
+for i = 1:numel(VWC_grid)
+    VWC0 = VWC_grid(i);
+
+    % Surface eps for uniform argument (still useful for sanity / interface)
+    eps_g0 = soilPermittivity_advanced(VWC0, SWC, sigma_bulk, soilParams, Tc, f, wparams, tauBW, clayParams);
+
+    % Set profile surface VWC
+    pars.soil_profile.VWC0 = VWC0;
+
+    out = insar_forward_snow_soil_benchmark(theta_i, f, Hs, eps_snow, eps_g0, pars);
+
+    phiE(i)  = angle(out.E);
+    phiEg(i) = angle(out.Eg);
+    phiAg(i) = angle(out.Ag);
+
+    % Recover Gamma_coh and Gamma_diff for plotting (only exact when Cdiff known)
+    % We'll compute these from the kernel definitions:
+    R12 = (out.kzs - out.kzg) / (out.kzs + out.kzg);
+    dkz = (out.kzs - out.kzg);
+    Gamma_coh = exp(-0.5 * (pars.rough.sigma_h * dkz).^2);
+    q = abs(2*out.meta.kx);
+    PSDshape = exp(-(q*pars.rough.ell).^2 / 4);
+    Gamma_diff = sqrt(max(1 - abs(Gamma_coh).^2, 0)) .* sqrt(PSDshape);
+
+    Gamcoh(i)  = abs(Gamma_coh);
+    Gamdiff(i) = abs(Gamma_diff);
+end
+
+% Plot relative phases
+figure;
+plot(VWC_grid, rad2deg(unwrap(phiE - phiE(1))), 'k', 'LineWidth', 1.5); hold on;
+plot(VWC_grid, rad2deg(unwrap(phiEg - phiEg(1))), 'r', 'LineWidth', 1.5);
+plot(VWC_grid, rad2deg(unwrap(phiAg - phiAg(1))), 'b', 'LineWidth', 1.5);
+grid on; xlabel('VWC (m^3/m^3)'); ylabel('Relative phase (deg)');
+legend('\phi(E)', '\phi(E_g)', '\phi(A_g)');
+title('Phase sensitivity vs VWC');
+
+% Plot Gamma magnitudes
+figure;
+plot(VWC_grid, Gamcoh, 'k', 'LineWidth', 1.5); hold on;
+plot(VWC_grid, Gamdiff, 'r', 'LineWidth', 1.5);
+grid on; xlabel('VWC (m^3/m^3)'); ylabel('Magnitude');
+legend('|\\Gamma_{coh}|','|\\Gamma_{diff}|');
+title('Coherent attenuation and diffuse amplitude');
+
+% Example: show profile diagnostics at last VWC
+pars.soil_profile.VWC0 = VWC_grid(end);
+eps_g0 = soilPermittivity_advanced(VWC_grid(end), SWC, sigma_bulk, soilParams, Tc, f, wparams, tauBW, clayParams);
+out = insar_forward_snow_soil_benchmark(theta_i, f, Hs, eps_snow, eps_g0, pars);
+plot_soil_profile_diagnostics(out.profile.diag, f);

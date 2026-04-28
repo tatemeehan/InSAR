@@ -1,10 +1,13 @@
-function out = inpaint_interferogram_ml(insarPair, G, basinOwner, basinMeta, crResult, demData, opts)
+function out = inpaint_interferogram_ml_committee(insarPair, G, basinOwner, basinMeta, crResult, demData, opts)
 %INPAINT_INTERFEROGRAM_ML
 % Production phase inpainting using shared CR-anchored support.
 %
 % Supports:
 %   opts.method = 'ml'       -> bagged trees / selected ML model
 %   opts.method = 'gaussian' -> Gaussian phase interpolation from trusted mask
+%
+% Optional committee mode for ML:
+%   opts.useCommittee = true/false
 %
 % Outputs:
 %   phzFilled, phzWrappedFilled, phaseQuality, trusted/support masks, etc.
@@ -60,34 +63,12 @@ maskOpts.sameWrapMask = sameWrapMask;
 
 support = insar.create_trusted_mask(phz, cor, maskOpts);
 trustedMask = support.trustedMask;
-% -------------------------------------------------------------------------
-% Stricter ML training mask (clean subset of trusted support)
-% -------------------------------------------------------------------------
-trainMaskCore = trustedMask & directSolvedMask;
-
-% Remove pixels near basin boundaries
-if ~isempty(basinOwner)
-    boundaryMask = basin_boundary_mask(basinOwner);
-    boundaryBuffer = imdilate(boundaryMask, strel('disk', 2));
-    trainMaskCore = trainMaskCore & ~boundaryBuffer;
-end
-
-% Original wrapped-phase local consistency
-origValidMask = support.validMask & isfinite(phz);
-[trainPhaseQuality, ~] = insar.phase_quality_gaussian( ...
-    angle(exp(1i * phz)), 3, 0.35, origValidMask);
-
-trainMaskCore = trainMaskCore & (trainPhaseQuality >= 0.75);
-
-% Basin-level purity rejection
-if ~isempty(basinOwner)
-    trainMaskCore = trainMaskCore & basin_purity_mask(phz, basinOwner, trustedMask, 0.85, 0.8);
-end
 
 % -------------------------------------------------------------------------
 % Fill phase
 % -------------------------------------------------------------------------
 phaseFillSpread = [];
+
 switch lower(opts.method)
     case 'gaussian'
         phzFilled = insar.phase_fill_gaussian_interp(phz, trustedMask, opts.phaseSigma);
@@ -100,10 +81,9 @@ switch lower(opts.method)
         featOpts.minValidFrac = opts.minValidFrac;
 
         feat = insar.build_phase_fill_features(demData, G, insarPair, featOpts);
-        feat.trustedMask = trustedMask;      % used for preserve/support logic
-        feat.trainMask = trainMaskCore & feat.validFeatureMask;   % stricter mask used only for fitting
+        feat.trustedMask = trustedMask;  % enforce shared support
 
-        % optionally prune features centrally
+        % training options
         fillOpts = struct();
         fillOpts.trainCohThresh = opts.trainCohThresh;
         fillOpts.maxTrainSamples = opts.maxTrainSamples;
@@ -115,14 +95,15 @@ switch lower(opts.method)
         fillOpts.selectedFeatures = opts.selectedFeatures;
 
         % committee options
-        fillOpts.useCommittee = opts.useCommittee;
-        fillOpts.nCommittee = opts.nCommittee;
-        fillOpts.treesPerModel = opts.treesPerModel;
-        fillOpts.subsampleFrac = opts.subsampleFrac;
-        fillOpts.baseSeed = opts.baseSeed;
-        fillOpts.committeeAggregate = opts.committeeAggregate;
-        fillOpts.storeCommitteeSpread = opts.storeCommitteeSpread;
+        if isfield(opts,'useCommittee'),         fillOpts.useCommittee = opts.useCommittee; end
+        if isfield(opts,'nCommittee'),           fillOpts.nCommittee = opts.nCommittee; end
+        if isfield(opts,'treesPerModel'),        fillOpts.treesPerModel = opts.treesPerModel; end
+        if isfield(opts,'subsampleFrac'),        fillOpts.subsampleFrac = opts.subsampleFrac; end
+        if isfield(opts,'baseSeed'),             fillOpts.baseSeed = opts.baseSeed; end
+        if isfield(opts,'committeeAggregate'),   fillOpts.committeeAggregate = opts.committeeAggregate; end
+        if isfield(opts,'storeCommitteeSpread'), fillOpts.storeCommitteeSpread = opts.storeCommitteeSpread; end
 
+        % prediction options
         predOpts = struct();
         predOpts.predCohThresh = opts.predCohThresh;
         predOpts.maxFillDistance = opts.maxFillDistance;
@@ -131,19 +112,32 @@ switch lower(opts.method)
         predOpts.smoothSigma = opts.smoothSigma;
         predOpts.preserveTrusted = opts.preserveTrusted;
 
+        % -----------------------------
+        % Committee or single model
+        % -----------------------------
+        useCommittee = isfield(fillOpts,'useCommittee') && fillOpts.useCommittee;
 
-        if isfield(fillOpts,'useCommittee') && fillOpts.useCommittee
+        if useCommittee
             committee = train_phase_fill_committee(feat, fillOpts);
             committeePred = predict_phase_fill_committee(feat, committee, predOpts);
 
-            switch lower(fillOpts.committeeAggregate)
+            aggregateMode = 'median';
+            if isfield(fillOpts,'committeeAggregate') && ~isempty(fillOpts.committeeAggregate)
+                aggregateMode = lower(fillOpts.committeeAggregate);
+            end
+
+            switch aggregateMode
                 case 'mean'
                     phzFilled = committeePred.filledResidualMean;
                 otherwise
                     phzFilled = committeePred.filledResidualMedian;
             end
 
-            if fillOpts.storeCommitteeSpread
+            storeSpread = false;
+            if isfield(fillOpts,'storeCommitteeSpread') && fillOpts.storeCommitteeSpread
+                storeSpread = true;
+            end
+            if storeSpread
                 phaseFillSpread = committeePred.filledResidualMAD;
             end
 
@@ -152,10 +146,10 @@ switch lower(opts.method)
 
             modelInfo = struct();
             modelInfo.method = 'ml_committee';
-            modelInfo.nCommittee = fillOpts.nCommittee;
-            modelInfo.treesPerModel = fillOpts.treesPerModel;
-            modelInfo.subsampleFrac = fillOpts.subsampleFrac;
-            modelInfo.aggregate = fillOpts.committeeAggregate;
+            modelInfo.nCommittee = committee.opts.nCommittee;
+            modelInfo.treesPerModel = committee.opts.treesPerModel;
+            modelInfo.subsampleFrac = committee.opts.subsampleFrac;
+            modelInfo.aggregate = aggregateMode;
             modelInfo.featureNames = committee.featureInfo.featureNames;
 
         else
@@ -178,6 +172,8 @@ phzWrappedFilled = angle(exp(1i * phzFilled));
 
 % -------------------------------------------------------------------------
 % Phase-quality map = synthetic coherence metric for the filled phase
+% NOTE: using your updated signature:
+%   phase_quality_gaussian(wrapped_phase, sigma, minValidFrac, validMask)
 % -------------------------------------------------------------------------
 validMaskForQuality = support.validMask & isfinite(phzFilled);
 [phaseQuality, qualitySupportFrac] = insar.phase_quality_gaussian( ...
@@ -222,7 +218,6 @@ end
 
 %% Helper Functions
 %--------------------------------------------------------------------------
-% Training Helper
 function committee = train_phase_fill_committee(feat, opts)
 %TRAIN_PHASE_FILL_COMMITTEE Train a committee of bagged ensembles.
 
@@ -289,8 +284,7 @@ committee.featureInfo = featureInfo;
 committee.trainMask = trainMask;
 end
 
-%-------------------------------------------------------------------------
-% Prediction Helper
+%--------------------------------------------------------------------------
 function out = predict_phase_fill_committee(feat, committee, predOpts)
 %PREDICT_PHASE_FILL_COMMITTEE Predict with multiple bagged ensembles and aggregate.
 
@@ -333,34 +327,38 @@ keep = ismember(allNames, opts.selectedFeatures);
 rawNames = allNames(keep);
 rawCols = allCols(keep);
 
-% Stack raw selected features
 Xraw = [];
 for i = 1:numel(rawCols)
     Xraw = [Xraw, rawCols{i}]; %#ok<AGROW>
 end
 
-% Target field
 y = feat.phz(:);
 
+% OG behavior: train from trustedMask unless a trainMask exists
 if isfield(feat, 'trainMask') && ~isempty(feat.trainMask)
     trainMask = feat.trainMask(:) & feat.validFeatureMask(:) & isfinite(y);
 else
     trainMask = feat.trustedMask(:) & feat.validFeatureMask(:) & isfinite(y);
 end
 
-if ~any(trainMask)
-    error('make_training_matrix_for_committee:EmptyTrainMask', ...
-        'Trusted training mask is empty.');
+% Match single-model fallback behavior
+if nnz(trainMask) < 1000
+    warning('Committee training mask too small; falling back to coherence-only training mask.');
+    trainMask = isfinite(y) & feat.validFeatureMask(:) & isfinite(feat.cor(:)) & ...
+                feat.cor(:) >= opts.trainCohThresh;
 end
 
-% Keep only columns with enough valid support
+if ~any(trainMask)
+    error('make_training_matrix_for_committee:EmptyTrainMask', ...
+        'No usable training rows remain after fallback.');
+end
+
 validFrac = mean(isfinite(Xraw(trainMask,:)), 1);
 featureKeepMask = validFrac >= opts.minValidFrac;
 
 Xraw = Xraw(:, featureKeepMask);
 featureNames = rawNames(featureKeepMask);
 
-% Restrict to fully finite rows for training
 rowMask = trainMask & all(isfinite(Xraw), 2);
 
 Xall = Xraw(rowMask,:);
@@ -370,50 +368,4 @@ featureInfo = struct();
 featureInfo.featureKeepMask = featureKeepMask;
 featureInfo.featureNames = featureNames;
 featureInfo.rowMask = rowMask;
-end
-
-%--------------------------------------------------------------------------
-function bnd = basin_boundary_mask(owner)
-%BASIN_BOUNDARY_MASK Pixels adjacent to a basin boundary.
-
-bnd = false(size(owner));
-
-% vertical differences
-m = owner(1:end-1,:) > 0 & owner(2:end,:) > 0 & owner(1:end-1,:) ~= owner(2:end,:);
-bnd(1:end-1,:) = bnd(1:end-1,:) | m;
-bnd(2:end,:)   = bnd(2:end,:)   | m;
-
-% horizontal differences
-m = owner(:,1:end-1) > 0 & owner(:,2:end) > 0 & owner(:,1:end-1) ~= owner(:,2:end);
-bnd(:,1:end-1) = bnd(:,1:end-1) | m;
-bnd(:,2:end)   = bnd(:,2:end)   | m;
-
-end
-
-%--------------------------------------------------------------------------
-function keepMask = basin_purity_mask(phz, basinOwner, baseMask, minPurity, phaseTol)
-%BASIN_PURITY_MASK Reject entire basins with mixed phase populations.
-%
-% minPurity: fraction of pixels in dominant local phase population
-% phaseTol : radian tolerance around circular basin mean
-
-keepMask = false(size(phz));
-
-numBasins = double(max(basinOwner(:)));
-for b = 1:numBasins
-    m = (basinOwner == b) & baseMask & isfinite(phz);
-    if nnz(m) < 10
-        continue;
-    end
-
-    zb = exp(1i * phz(m));
-    mu = angle(mean(zb, 'omitnan'));
-    d = angle(exp(1i * (phz(m) - mu)));
-
-    purity = mean(abs(d) <= phaseTol, 'omitnan');
-    if purity >= minPurity
-        keepMask(basinOwner == b) = true;
-    end
-end
-
 end

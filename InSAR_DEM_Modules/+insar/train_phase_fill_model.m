@@ -35,10 +35,15 @@ end
 
 y = feat.phz(:);
 
-baseTrainMask = feat.trustedMask(:) & feat.validFeatureMask(:) & isfinite(y);
+% Prefer stricter ML training mask when provided
+if isfield(feat, 'trainMask') && ~isempty(feat.trainMask)
+    baseTrainMask = feat.trainMask(:) & feat.validFeatureMask(:) & isfinite(y);
+else
+    baseTrainMask = feat.trustedMask(:) & feat.validFeatureMask(:) & isfinite(y);
+end
 
 if nnz(baseTrainMask) < 1000
-    warning('Phase fill trusted mask too small; falling back to coherence-only training mask.');
+    warning('Phase fill training mask too small; falling back to coherence-only training mask.');
     baseTrainMask = isfinite(y) & feat.validFeatureMask(:) & isfinite(feat.cor(:)) & ...
                     feat.cor(:) >= opts.trainCohThresh;
 end
@@ -120,7 +125,17 @@ rawNames = allNames(keep);
 rawCols = allCols(keep);
 
 y = feat.phz(:);
-candidateMask = feat.trustedMask(:) & feat.validFeatureMask(:) & isfinite(y);
+
+if isfield(feat, 'trainMask') && ~isempty(feat.trainMask)
+    candidateMask = feat.trainMask(:) & feat.validFeatureMask(:) & isfinite(y);
+else
+    candidateMask = feat.trustedMask(:) & feat.validFeatureMask(:) & isfinite(y);
+end
+
+if ~any(candidateMask)
+    error('train_phase_fill_model:EmptyCandidateMask', ...
+        'No valid training pixels remain after applying trainMask/trustedMask.');
+end
 
 keepMask = false(numel(rawCols),1);
 

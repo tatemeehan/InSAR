@@ -3,17 +3,17 @@ clear; close all; clc;
 
 %% --------------------- USER SETTINGS ---------------------
 % 2026 MCS GLSAR
-sarData(1).date = '20260223';
-sarData(1).dir = 'E:\MCS\MCS022326\GLSAR\lift1\slc';
-sarData(1).trajDir = 'E:\MCS\MCS022326\GLSAR\lift1\traj';
-sarData(1).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.slc'};
-sarData(1).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+sarData(1).date = '20260226';
+sarData(1).dir = 'D:\InSAR\MCS\GLSAR\MCS02262026\lift2\slc';
+sarData(1).trajDir = 'D:\InSAR\MCS\GLSAR\MCS02262026\lift2\traj';
+sarData(1).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260226T184834_TMA_TX2_RX2_V_V_V.slc'};
+sarData(1).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260226T184834_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
-% sarData(2).date = '20260226';
-% sarData(2).dir = 'E:\MCS\MCS022626\GLSAR\lift2\slc';
-% sarData(2).trajDir = 'E:\MCS\MCS022626\GLSAR\lift2\traj';
-% sarData(2).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260226T184834_TMA_TX2_RX2_V_V_V.slc'};
-% sarData(2).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260226T184834_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
+sarData(2).date = '20260223';
+sarData(2).dir = 'D:\InSAR\MCS\GLSAR\MCS02232026\lift1\slc';
+sarData(2).trajDir = 'D:\InSAR\MCS\GLSAR\MCS02232026\lift1\traj';
+sarData(2).slcFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.slc'};
+sarData(2).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX2_V_V_V.mli_geo.tif'};
 
 % 2026 Camas GLSAR
 % sarData(1).date = '20260219';
@@ -188,10 +188,11 @@ sarData(1).mliFiles = {'lband-mcs_2026_TMA_2ms_200MHz_20260223T224040_TMA_TX2_RX
 % demData.demFn = '2026_Camas_South.tif';
 % demData.vegFn  = 'WCPvegetationHeight.tif';
 
-% MCS 2026
-demData.dir = 'E:\MCS\MCS022326\dem';
-demData.demFn = '2026_MCS_Trim.tif';
-demData.vegFn  = '20260222_MCS_vegHeight_Trim.tif';
+% % MCS 2026
+demData.dir = 'D:\IDALS\2026\ref';
+demData.demFn = 'MCS_REF_DEM_T8_WintersCorner.tif';
+demData.vegDir = 'D:\IDALS\2026\chm';
+demData.vegFn  = 'msc2025_chm_WintersCorner.tif';
 
 % Processing Parameters
 params.c          = 0.3;      % Wave speed sonstant (m/ns)
@@ -204,7 +205,7 @@ params.filterSize = 5;        % Multilook filter window size (pixels)
 % Data Export (Under Construction)
 % Out Direcrtory
 % outDir = 'E:\CAMAS\GLSAR\20260219\Export240';
-outDir = 'E:\MCS\MCS022326\GLSAR\Export';
+outDir = 'D:\InSAR\MCS\GLSAR\Export';
 
 % Colorbars
 cmap = csvread('./colormaps/RdYlBu.csv');
@@ -214,13 +215,13 @@ storeCmap = cmap;
 %% ---------- Load DEM and Vegetation Rasters ----------
 % Read once, interpolate to MLI grid later
 [demRaw, Rdem, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.dir, demData.demFn));
-[vegRaw, Rveg, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.dir, demData.vegFn));
+[vegRaw, Rveg, ~, ~, ~, ~, ~, ~, ~] = io.readLidarTif(fullfile(demData.vegDir, demData.vegFn));
 
 % Check for Non-Existant Values set to NaN
-nanIx = demRaw <=0;
+nanIx = demRaw < 0 | demRaw == inf;
 demRaw(nanIx) = NaN;
 if exist("vegRaw","var")
-    nanIx = vegRaw <=0;
+    nanIx = vegRaw < 0 | vegRaw > 50;
     vegRaw(nanIx) = NaN;
 end
 %% ---------- Load Each MLI Frame & Store DEM Data ----------
@@ -252,9 +253,10 @@ for ii = 1:numel(sarData)
 
         % NaN masking
         % nanMask = demInterp < 0 | vegInterp > 100 | isnan(demInterp);
-        nanMask = demInterp < 0  | isnan(demInterp);
-        demInterp(nanMask) = NaN;
+        nanMask = vegInterp < 0  | isnan(vegInterp) | isinf(vegInterp);
         vegInterp(nanMask) = NaN;
+        nanMask = demInterp < 0  | isnan(demInterp) | isinf(demInterp);
+        demInterp(nanMask) = NaN;
 
         % Store DEM + veg + mask
         demData.dem = demInterp;
@@ -438,22 +440,31 @@ fprintf('SLC processing complete. Elapsed time: %.2f seconds\n', toc);
 fprintf('Interferometric Processing \n');
 tic
 params.filterSize = 9;
-unwrapOpts.method = 'none'; %'multiseed', 'none'
+unwrapOpts.method = 'multiseed'; %'multiseed', 'none'
 unwrapOpts.qualityThresh = 0.3;
 unwrapOpts.rampRemoval.enable = false;
 unwrapOpts.sigma = 5;
 unwrapOpts.pairingMode = 'allCombos';
 
+% Phase Alignment Parameters
+unwrapOpts.basinScreenCohThresh = 0.5;
+unwrapOpts.basinMinEdgeSupport = 8;
+unwrapOpts.basinGapMaxPixels = 20;
+unwrapOpts.basinGapTopN = 3;
+unwrapOpts.basinMaxResidualSpread = 0.8;
+unwrapOpts.basinMinGapWeight = 8;
+unwrapOpts.basinMinGapArea = 5;
+
 % Phase Fill Options Whew Doggy
 unwrapOpts.phaseFill.enable = true;
 unwrapOpts.phaseFill.method = 'ml';
 
-unwrapOpts.phaseFill.trainCohThresh = 0.75;
-unwrapOpts.phaseFill.maxTrainDistToCR = 250;
-unwrapOpts.phaseFill.sameWrapThresh = 1.0;
+unwrapOpts.phaseFill.trainCohThresh = 0.7;
+unwrapOpts.phaseFill.maxTrainDistToCR = 150;
+unwrapOpts.phaseFill.sameWrapThresh = 0.85;
 
 unwrapOpts.phaseFill.crRadiusPx = 100;
-unwrapOpts.phaseFill.maxGraphHops = 50;
+unwrapOpts.phaseFill.maxGraphHops = 30;
 unwrapOpts.phaseFill.includeGapEdges = false;
 
 unwrapOpts.phaseFill.maxTrainSamples = 100000;
@@ -462,6 +473,13 @@ unwrapOpts.phaseFill.numTrees = 250;
 unwrapOpts.phaseFill.minLeafSize = 15;
 unwrapOpts.phaseFill.minValidFrac = 0.25;
 unwrapOpts.phaseFill.learnRate = 0.05;
+
+unwrapOpts.phaseFill.useCommittee = true;
+unwrapOpts.phaseFill.nCommittee = 5;
+unwrapOpts.phaseFill.treesPerModel = 75;
+unwrapOpts.phaseFill.subsampleFrac = 0.7;
+unwrapOpts.phaseFill.baseSeed = 11;
+unwrapOpts.phaseFill.committeeAggregate = 'median';
 
 unwrapOpts.phaseFill.selectedFeatures = {'Z','V','slope','aspect_sin','aspect_cos','power','cor','incidence'};
 
@@ -477,7 +495,8 @@ unwrapOpts.phaseFill.qualityMinValidFrac = 0.35;
 unwrapOpts.phaseFill.qualityThreshold = [];   % or 0.7 if you want a masked product too
 unwrapOpts.phaseFill.storeModelInfo = false;
 
-[insarData, unwrapOpts] = insar.process_interferometric_phase(sarData, geomData, demData, CR, params, unwrapOpts);
+% [insarData, unwrapOpts] = insar.process_interferometric_phase(sarData, geomData, demData, CR, params, unwrapOpts);
+[insarDataOut, unwrapOpts] = insar.process_interferometric_phase_4testing(sarData, geomData, demData, crResult, params, unwrapOpts, insarData);
 insarClosureData = insar.compute_insar_closure_bias(insarData);
 fprintf('InSAR processing complete. Elapsed time: %.2f seconds\n', toc);
 
@@ -552,6 +571,14 @@ exportOpts.plotOpts.insar.phzReferenced = struct( ...
     'titleText', 'Referenced Phase',...
     'cbarLabel', '\Delta \phi(rad)');
 
+exportOpts.plotOpts.insar.phzReferencedFilled = struct( ...
+    'cmap', cmap, ...
+    'climVals', [-2.*pi, 2.*pi], ...
+    'showHillshade', true,...
+    'phasePiLocked', true,...
+    'titleText', 'Referenced Phase',...
+    'cbarLabel', '\Delta \phi(rad)');
+
 exportOpts.plotOpts.insar.coherence = struct( ...
     'cmap', cmap, ...
     'climVals', [0 1],...
@@ -615,12 +642,12 @@ figure();
 % subplot(1,2,1)
 imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
 utils.freezeColors; hold on;
-hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,db,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
-ylabel(hc,'Power (dB)','fontname','serif','fontweight','bold','fontsize',14)
+% hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,db,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+% ylabel(hc,'Power (dB)','fontname','serif','fontweight','bold','fontsize',14)
 % xlabel('Longitude');ylabel('Latitude');
 xlabel('Easting (km)');ylabel('Northing (km)');
-clim([quantile(db(:),[0.1,0.975])])
-clim([-30 0])
+% clim([quantile(db(:),[0.1,0.975])])
+% clim([-30 0])
 % clim([-30 10])
 set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
 title('a) White Clouds Preserve: 09/10/25')
@@ -639,7 +666,9 @@ ytickformat('%.1f')
 % Interferogram
 % phz = phz_equiv;
 % phz = insarData(1).phzUnwrapped;
+phz = insarData(1).phzReferencedFilled;
 phz = insarData(1).phzReferenced;
+
 % phz = insarData(1).phzWrapped;
 % phz = phz_corr;
 % phz = angle(insarData(1).complexCoherence);

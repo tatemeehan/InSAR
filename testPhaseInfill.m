@@ -53,7 +53,7 @@ crResult = utils.CRpower(crPath, crName, demData, sarData, geomData, params.lamb
 
 fillOpts = struct();
 fillOpts.trainCohThresh = 0.75;
-fillOpts.maxTrainDistToCR = 250;
+fillOpts.maxTrainDistToCR = 100;
 fillOpts.maxTrainSamples = 100000;
 fillOpts.modelType = 'bag';
 fillOpts.numTrees = 250;

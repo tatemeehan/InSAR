@@ -290,7 +290,7 @@ end
 function I = compact_insar_data_for_save(I, opts)
 for k = 1:numel(I)
     fieldsSingle = { ...
-        'phzWrapped','phzWrappedReferenced','phzUnwrapped','phzReferenced', ...
+        'phzWrapped','phzWrappedReferenced','phzUnwrapped','phzReferenced','phzReferenedFilled' ...
         'coherence','refScreen','refScreenWrapped', ...
         'penetration','penetrationSensitivity','penetrationDetectableHeight', ...
         'phaseNoiseStd'};
@@ -360,7 +360,7 @@ for k = 1:numel(I)
     % Light mode: clear large raster fields but preserve schema
     if strcmpi(opts.saveMode, 'light')
         rasterFieldsToClear = { ...
-            'phzWrapped','phzWrappedReferenced','phzUnwrapped','phzReferenced', ...
+            'phzWrapped','phzWrappedReferenced','phzUnwrapped','phzReferenced','phzReferencedFilled', ...
             'coherence','refScreen','refScreenWrapped', ...
             'penetration','penetrationValidMask','penetrationSensitivity', ...
             'penetrationDetectableHeight','phaseNoiseStd', ...
@@ -489,6 +489,7 @@ for k = 1:numel(I)
     write_geotiff_if_present(fullfile(id, 'phz_wrapped_referenced.tif'), I(k), 'phzWrappedReferenced', R, epsgCode, opts);
     write_geotiff_if_present(fullfile(id, 'phz_unwrapped.tif'), I(k), 'phzUnwrapped', R, epsgCode, opts);
     write_geotiff_if_present(fullfile(id, 'phz_referenced.tif'), I(k), 'phzReferenced', R, epsgCode, opts);
+    write_geotiff_if_present(fullfile(id, 'phz_referenced_filled.tif'), I(k), 'phzReferencedFilled', R, epsgCode, opts);
     write_geotiff_if_present(fullfile(id, 'coherence.tif'), I(k), 'coherence', R, epsgCode, opts);
     write_geotiff_if_present(fullfile(id, 'ref_screen.tif'), I(k), 'refScreen', R, epsgCode, opts);
     write_geotiff_if_present(fullfile(id, 'ref_screen_wrapped.tif'), I(k), 'refScreenWrapped', R, epsgCode, opts);
@@ -1088,6 +1089,13 @@ for k = 1:numel(insarData)
         plotOpts = get_plot_opts(opts, 'insar', 'phzReferenced');
         hFig = plot_raster_map(demData, insarData(k).phzReferenced, plotOpts);
         save_figure(hFig, fullfile(pairDir, ['phz_referenced.' opts.figureFormat]), opts);
+    end
+
+    % --- Infilled Phase ---
+    if isfield(insarData(k),'phzReferencedFilled') && ~isempty(insarData(k).phzReferencedFilled)
+        plotOpts = get_plot_opts(opts, 'insar', 'phzReferencedFilled');
+        hFig = plot_raster_map(demData, insarData(k).phzReferencedFilled, plotOpts);
+        save_figure(hFig, fullfile(pairDir, ['phz_referenced_filled.' opts.figureFormat]), opts);
     end
 
     % --- Coherence ---
