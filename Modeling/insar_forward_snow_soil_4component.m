@@ -118,6 +118,32 @@ else
     end
 end
 
+% Optional air/snow free-surface height phase
+if isfield(pars,'snow_surface') && ...
+        isfield(pars.snow_surface,'include_height_phase') && ...
+        pars.snow_surface.include_height_phase
+
+    heightSign = +1;
+
+    if isfield(pars.snow_surface,'height_phase_sign') && ...
+            ~isempty(pars.snow_surface.height_phase_sign)
+        heightSign = pars.snow_surface.height_phase_sign;
+    end
+
+    % Default relative height is snow depth above snow-free ground.
+    zRel = Hs;
+
+    % Optional explicit scalar relative surface height.
+    if isfield(pars.snow_surface,'z_rel') && ...
+            ~isempty(pars.snow_surface.z_rel)
+        zRel = pars.snow_surface.z_rel;
+    end
+
+    phiSurf = heightSign .* 2 .* real(kza) .* zRel;
+
+    Eas = Eas .* exp(1i .* phiSurf);
+end
+
 % =================
 % 2) Snow volume Es
 % =================

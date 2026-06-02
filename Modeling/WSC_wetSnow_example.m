@@ -136,6 +136,13 @@ pars.soil_profile.wparams    = wparams;
 pars.soil_profile.tauBW      = tauBW;
 pars.soil_profile.clayParams = clayParams;
 
+% Snow Elevation Change
+% Default uses Snow Depth Differnce
+% Optionally a z_rel for each pass can be used e.g.
+% pars.snow_surface.z_rel = zSnowSurf23 - zSnowFree;
+pars.snow_surface.include_height_phase = true;
+pars.snow_surface.height_phase_sign = +1;
+
 % ---------------- Snow definitions ----------------
 snow1 = struct('Hs',1.00,'rho',350,'lwc',0.015,'Tk',273.15);
 snow2 = struct('Hs',1.00,'rho',350,'lwc',0.060,'Tk',273.15);  % wetter pass
@@ -933,7 +940,9 @@ test_dphi_Ts_snow(kk) = angle(o1.Ts_excess .* conj(o2.Ts_excess));
 end
 
 soilPhz = squeeze(test_dphi_det(2,2,:));
-eps_eff = [eps_eff_frozen; eps_eff_moist; eps_eff_wet];
+% eps_eff = [eps_eff_frozen; eps_eff_moist; eps_eff_wet];
+eps_eff = [eps_eff_frozen; eps_eff_frozen; eps_eff_frozen];
+
 
 eps_r = real(eps_eff);
 eps_i = imag(eps_eff);

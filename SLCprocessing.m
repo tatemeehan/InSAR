@@ -344,6 +344,44 @@ subplot(1,4,3)
 imagesc(geomData.sarGeometry{geomData.pairResults.geomIndex}.slant);colorbar;daspect([1,1,1]);title('Slant Range')
 subplot(1,4,4)
 imagesc(geomData.sarGeometry{geomData.pairResults.geomIndex}.lookMask);colorbar;daspect([1,1,1]);title('Look Mask')
+
+% Incidence Angle
+figure();
+imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
+utils.freezeColors; hold on;
+hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,geomData.sarGeometry{geomData.pairResults.geomIndex}.incidence,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+ylabel(hc,'Incidence Angle (\circ)','fontname','serif','fontweight','bold','fontsize',14)
+
+% xlabel('Longitude');ylabel('Latitude');
+xlabel('Easting (km)');ylabel('Northing (km)');
+clim([10 80])
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
+% title('Incidence Angle')
+
+ax = ancestor(hI, 'axes');
+ax.XAxis.Exponent = 0;
+xtickformat('%.1f')
+ax.YAxis.Exponent = 0;
+ytickformat('%.1f')
+
+% Slant Range
+figure();
+imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,((cosd(demData.aspect+45)+sind(demData.aspect+45))).*sind(2.5.*demData.slope));colormap(bone)
+utils.freezeColors; hold on;
+hI = imagesc(demData.X(1,:)./1000,demData.Y(:,1)./1000,geomData.sarGeometry{geomData.pairResults.geomIndex}.slant,'AlphaData',0.625);daspect([1,1,1]);colormap([[1 1 1];cmap]);hc=colorbar;
+ylabel(hc,'Slant Range (m)','fontname','serif','fontweight','bold','fontsize',14)
+
+% xlabel('Longitude');ylabel('Latitude');
+xlabel('Easting (km)');ylabel('Northing (km)');
+clim([0 1000])
+set(gca,'YDir','normal','fontname','serif','fontweight','bold','fontsize',14)
+
+ax = ancestor(hI, 'axes');
+ax.XAxis.Exponent = 0;
+xtickformat('%.1f')
+ax.YAxis.Exponent = 0;
+ytickformat('%.1f')
+
 end
 %% -------------------- Doppler Frequency Corrections ---------------------
 % fprintf('Doppler Centroid Computation\n')
